@@ -1,2 +1,2 @@
 # serinus
-A hobby project: raspberry pi pico controlled drone
+A hobby project: raspberry-pi pico controlled drone
