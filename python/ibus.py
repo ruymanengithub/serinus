@@ -79,8 +79,8 @@ class IBus ():
     @staticmethod
     def normalize (value, type="default"):
         if (type == "dial"):
-            return ((value - 1000) / 10)
+            return ((value - 1000.) / 10.)
         else:
-            return ((value - 1500) / 5)
+            return ((value - 1500.) / 5.)
         
     
