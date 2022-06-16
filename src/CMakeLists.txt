@@ -1,4 +1,7 @@
 
+add_subdirectory(FlySkyIBus)
+
+add_subdirectory(Tests)
 
 add_executable(picodrone
     picodrone.c
