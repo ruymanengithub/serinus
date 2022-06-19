@@ -1,113 +1,30 @@
 /*
  * Simple interface to the Fly Sky IBus RC system.
- * https://gitlab.com/timwilkinson/FlySkyIBus
+ * inspired on: https://gitlab.com/timwilkinson/FlySkyIBus
+ * adapted to pico sdk (by a complete cpp newbie...).
+ * 
+ * Author: R. Azzollini (2022)
  */
 
-//#include <Arduino.h>
 #include "FlySkyIBus.h"
 
 FlySkyIBus IBus;
 
-void FlySkyIBus::begin(HardwareSerial& serial)
-{
-  serial.begin(115200);
-  begin((Stream&)serial);
-}
 
-void FlySkyIBus::begin(Stream& stream)
-{
-  this->stream = &stream; // FlySkyIBus.stream is a pointer to stream?
-  this->state = DISCARD;
-  this->last = millis();
-  this->ptr = 0;
-  this->len = 0;
-  this->chksum = 0;
-  this->lchksum = 0;
-}
+// RX interrupt handler
+void FlySkyIBus::_on_uart_rx(void) {
+//void on_uart_rx(void) {
+    while (uart_is_readable(this->UART_ID)) {
+        //uint8_t ch = uart_getc(UART_ID);
+        uart_read_blocking(this->UART_ID, this->buffer, this->PROTOCOL_LENGTH);
+        this->bytes_rxed +=PROTOCOL_LENGTH;
+    };
+};
 
-void FlySkyIBus::loop(void)
-{
-  while (stream->available() > 0)
-  {
-    uint32_t now = millis(); /* Returns the number of milliseconds passed since the 
-    Arduino board began running the current program*/
-    if (now - last >= PROTOCOL_TIMEGAP)
-    {
-      state = GET_LENGTH;
-    }
-    last = now;
-    
-    uint8_t v = stream->read(); /* "to access members of a structure through 
-    a pointer, use the arrow operator"*/
-    switch (state)
-    {
-      case GET_LENGTH:
-        if (v <= PROTOCOL_LENGTH)
-        {
-          ptr = 0;
-          len = v - PROTOCOL_OVERHEAD;
-          chksum = 0xFFFF - v;
-          state = GET_DATA;
-        }
-        else
-        {
-          state = DISCARD;
-        }
-        break;
 
-      case GET_DATA:
-        buffer[ptr++] = v; //__after__ doing buffer[ptr] = v, increment ptr = ptr+1
-        chksum -= v;
-        if (ptr == len)
-        {
-          state = GET_CHKSUML;
-        }
-        break;
-        
-      case GET_CHKSUML:
-        lchksum = v;
-        state = GET_CHKSUMH;
-        break;
+/*
+// RX interrupt handler
+void on_uart_rx(void) {
 
-      case GET_CHKSUMH:
-        // Validate checksum
-        if (chksum == (v << 8) + lchksum) /* << = left shifting an integer “x” with an 
-        integer “y” denoted as ‘(x<<y)’ is equivalent to multiplying 
-        x with 2^y (2 raised to power y).*/
-        {
-          // Execute command - we only know command 0x40
-          switch (buffer[0])
-          {
-            case PROTOCOL_COMMAND40:
-              // Valid - extract channel data
-              for (uint8_t i = 1; i < PROTOCOL_CHANNELS * 2 + 1; i += 2)
-              {
-                channel[i / 2] = buffer[i] | (buffer[i + 1] << 8);
-              }
-              break;
-
-            default:
-              break;
-          }
-        }
-        state = DISCARD;
-        break;
-
-      case DISCARD:
-      default:
-        break;
-    }
-  }
-}
-
-uint16_t FlySkyIBus::readChannel(uint8_t channelNr)
-{
-  if (channelNr < PROTOCOL_CHANNELS)
-  {
-    return channel[channelNr];
-  }
-  else
-  {
-    return 0;
-  }
-}
+};
+*/

@@ -17,6 +17,7 @@
 #define PARITY UART_PARITY_NONE
 
 #define BUF_LEN 32
+//#define sanwichito 5
 
 // We are using pins 0 and 1, but see the GPIO function select table in the
 // datasheet for information on which other pins can be used.
