@@ -2,14 +2,13 @@ add_executable(HelloBlink
         HelloBlink.c
         )
 
-add_executable(hello_pwm,
-        hello_pwhm.c
-        )       
+add_executable(hello_pwm
+        hello_pwm.c
+        )
 
 # pull in common dependencies
 target_link_libraries(HelloBlink pico_stdlib)
-
-target_link_libraries(hello_pwm pico_stdlib, hardware_pwm, hardware_clocks)
+target_link_libraries(hello_pwm pico_stdlib hardware_pwm hardware_clocks)
 
 
 # create map/bin/hex file etc.

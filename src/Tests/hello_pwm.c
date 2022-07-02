@@ -7,6 +7,7 @@
 
 // Output PWM signals on pins 16, 17, 18 and 19
 
+#include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/pwm.h"
 #include "hardware/clocks.h"
@@ -19,18 +20,18 @@ const uint MEASURE_PIN = 5;
 
 
 const uint PWMPINS[] = {
-    16,
+    15,
     17,
-    18,
-    19
-}
+    19,
+    21
+};
 
 const float duty_cycles[] = {
     0.1f,
     0.5f,
     0.9f,
     1.f
-}
+};
 
 float measure_duty_cycle(uint gpio) {
     // Only the PWM B pins can be used as inputs.
@@ -53,7 +54,7 @@ float measure_duty_cycle(uint gpio) {
 }
 
 int main() {
-    stdio_init_all()
+    stdio_init_all();
     printf("\nPWM duty cycle measurement example\n");
     const uint count_top = 1000;
     pwm_config cfg = pwm_get_default_config();
@@ -64,7 +65,7 @@ int main() {
         uint PWMPIN = PWMPINS[j];
         pwm_init(pwm_gpio_to_slice_num(PWMPIN), &cfg, true);
         gpio_set_function(PWMPIN, GPIO_FUNC_PWM);
-        float output_duty_cycle = test_duty_cycles[j];
+        float output_duty_cycle = duty_cycles[j];
         pwm_set_gpio_level(PWMPIN, output_duty_cycle * (count_top + 1));
     }
 
@@ -80,7 +81,7 @@ int main() {
 
         float measured_duty_cycle = measure_duty_cycle(MEASURE_PIN);
         printf("Measured input duty cycle = %.1f%%\n", measured_duty_cycle * 100.f);
-        sleep_ms(1000)
+        sleep_ms(1000);
 
     }
     
