@@ -7,6 +7,22 @@
 #include <stdio.h>
 #include "mpu6050.h"
 
+void run_selftest(i2c_inst_t* I2C_ID) {
+
+    float SelfTest[6];
+
+    mpu6050_selftest(I2C_ID, SelfTest);
+
+    printf("x-axis self test: acceleration trim within : %f %% of factory value\n", SelfTest[0]);
+    printf("y-axis self test: acceleration trim within : %f %% of factory value\n", SelfTest[1]);
+    printf("z-axis self test: acceleration trim within : %f %% of factory value\n", SelfTest[2]);
+    printf("x-axis self test: gyration trim within : %f %% of factory value\n", SelfTest[3]);
+    printf("y-axis self test: gyration trim within : %f %% of factory value\n", SelfTest[4]);
+    printf("z-axis self test: gyration trim within : %f %% of factory value\n", SelfTest[5]);
+
+
+}
+
 
 int main() {
 
@@ -19,38 +35,9 @@ int main() {
     i2c_setup(I2C_ID);
     mpu6050_reset(I2C_ID);
 
+    run_selftest(I2C_ID);
 
-    float SelfTest[6];
-
-    mpu6050_selftest(I2C_ID, SelfTest);
-
-    printf("x-axis self test: acceleration trim within : %f pc of factory value\n", SelfTest[0]);
-    printf("y-axis self test: acceleration trim within : %f pc of factory value\n", SelfTest[1]);
-    printf("z-axis self test: acceleration trim within : %f pc of factory value\n", SelfTest[2]);
-    printf("x-axis self test: gyration trim within : %f pc of factory value\n", SelfTest[3]);
-    printf("y-axis self test: gyration trim within : %f pc of factory value\n", SelfTest[4]);
-    printf("z-axis self test: gyration trim within : %f pc of factory value\n", SelfTest[5]);
-
-    /*
-    int16_t racc1[3], rgyro1[3], rtemp;
-    mpu6050_read_raw(I2C_ID, racc1, rgyro1, &rtemp);
-    mpu6050_selftest(I2C_ID);
-    int16_t racc2[3], rgyro2[3];
-    mpu6050_read_raw(I2C_ID, racc2, rgyro2, &rtemp);
-
-    printf("DAcc. X = %d, Y = %d, Z = %d\n", racc2[0], 
-                                    racc2[1], racc2[2]);
-    printf("DGyro. X = %d, Y = %d, Z = %d\n", rgyro2[0], 
-                                    rgyro2[1], rgyro2[2]);
-
-
-    printf("DAcc. X = %d, Y = %d, Z = %d\n", racc2[0]-racc1[0], 
-                                    racc2[1]-racc1[1], racc2[2]-racc2[1]);
-    printf("DGyro. X = %d, Y = %d, Z = %d\n", rgyro2[0]-rgyro1[0], 
-                                    rgyro2[1]-rgyro1[1], rgyro2[2]-rgyro1[2]);
-    */
-
-    float accel[3], gyro[3], temp;
+    //float accel[3], gyro[3], temp;
 
     /*    
 
