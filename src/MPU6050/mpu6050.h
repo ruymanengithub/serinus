@@ -11,6 +11,9 @@
 
 #define I2C_SDA_PIN 2
 #define I2C_SCL_PIN 3
+#define FS_SEL 0
+#define AFS_SEL 2
+
 #define ACCEL_CONFIG_REG 0x1C // register
 #define GYRO_CONFIG_REG 0x1B // register
 
@@ -25,7 +28,7 @@ static int addr = 0x68;  // 104
 
 //void i2c_setup(i2c_inst_t* I2C_ID, uint pI2C_SDA_PIN, uint pI2C_SCL_PIN) {
 void i2c_setup(i2c_inst_t* I2C_ID) {
-
+    // sets up i2c IF in RP Pico
     i2c_init(I2C_ID, 400 * 1000);
     gpio_set_function(I2C_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL_PIN, GPIO_FUNC_I2C);
@@ -35,43 +38,15 @@ void i2c_setup(i2c_inst_t* I2C_ID) {
     // Make the I2C pins available to picotool
     bi_decl(bi_2pins_with_func(I2C_SDA_PIN, I2C_SCL_PIN, GPIO_FUNC_I2C));
 
-
-
-    // configure accel.
-    // 0b00010000
-    uint8_t acc[] = {ACCEL_CONFIG_REG, 0x10}; // AFS_SEL = 2, 8 g
-    i2c_write_blocking(I2C_ID, addr, acc, 1, true); // true to keep master control of bus
-
-    // configure gyro
-    // 0b00010000
-    uint8_t gyro[] = {GYRO_CONFIG_REG, 0x00}; // FS_SEL = 0, 250 deg/s
-    i2c_write_blocking(I2C_ID, addr, gyro, 1, true); // true to keep master control of bus
-
 }
 
-void mpu6050_selftest_firstAttempt(i2c_inst_t* I2C_ID, float SelfTest[6]) {
-
-    // self-test accel.
-    // 0b11110000
-    uint8_t acc[] = {0x1C, 0xF8}; // AFS_SEL = 2, 8 g
-    i2c_write_blocking(I2C_ID, addr, acc, 1, true); // true to keep master control of bus
-
-    // configure gyro
-    // 0b11110000
-    uint8_t gyro[] = {0x1B, 0xF8}; // FS_SEL = 2, 1000 deg/s
-    i2c_write_blocking(I2C_ID, addr, gyro, 1, true); // true to keep master control of bus
-
-    sleep_ms(250);
-
-}
 
 uint8_t readByte(i2c_inst_t* I2C_ID, uint8_t subAddress){
-
+    // reads 1 Byte
     uint8_t data1B;
     i2c_write_blocking(I2C_ID, addr, &subAddress, 1, true);
     i2c_read_blocking(I2C_ID, addr, &data1B, 1, false);
     return data1B;
-
 }
 
 void mpu6050_selftest(i2c_inst_t* I2C_ID, float destination[6]) 
@@ -132,6 +107,17 @@ void mpu6050_reset(i2c_inst_t* I2C_ID) {
     // There are a load more options to set up the device in different ways that could be added here
     uint8_t buf[] = {0x6B, 0x00}; // 107, 0
     i2c_write_blocking(I2C_ID, addr, buf, 2, false);
+
+    // configure accel.
+    uint8_t maskacc = AFS_SEL << 3; // 0b0000XX000
+    uint8_t acc[] = {ACCEL_CONFIG_REG, maskacc};  
+    i2c_write_blocking(I2C_ID, addr, acc, 2, false); // true to keep master control of bus
+    
+    // configure gyro
+    uint8_t maskgyro = FS_SEL << 3; // 0b0000XX000
+    uint8_t gyro[] = {GYRO_CONFIG_REG, maskgyro};  
+    i2c_write_blocking(I2C_ID, addr, gyro, 2, false); // true to keep master control of bus
+
 }
 
 void mpu6050_read_raw(i2c_inst_t* I2C_ID, int16_t accel[3], int16_t gyro[3], int16_t *temp) {
@@ -140,6 +126,9 @@ void mpu6050_read_raw(i2c_inst_t* I2C_ID, int16_t accel[3], int16_t gyro[3], int
     // so we don't need to keep sending the register we want, just the first.
 
     uint8_t buffer[6];
+
+    //uint8_t acc[] = {ACCEL_CONFIG_REG, 0b00011000}; // AFS_SEL = 3, +-16 g
+    //i2c_write_blocking(I2C_ID, addr, acc, 1, true); // true to keep master control of bus
 
     // Start reading acceleration registers from register 0x3B for 6 bytes
     uint8_t val = 0x3B; // 59
@@ -170,26 +159,30 @@ void mpu6050_read_raw(i2c_inst_t* I2C_ID, int16_t accel[3], int16_t gyro[3], int
 }
 
 void mpu6050_read_cal(i2c_inst_t* I2C_ID, float accel[3], float gyro[3], float *temp) {
-    
+    // reads calibrated values of ACC and GYRO
     int16_t rawaccel[3], rawgyro[3], rawtemp;
 
     mpu6050_read_raw(I2C_ID, rawaccel, rawgyro, &rawtemp);
 
     // gyro
 
+    float scalegyro = 131.0 / (float)pow(2,FS_SEL);
+
     for (int i = 0; i < 3; i++) {
-        gyro[i] = rawgyro[i]/32.8; // deg / s 
+        gyro[i] = (float)rawgyro[i]/scalegyro; // deg / s 
     }
 
     // accel.
 
+
+    float scaleacc = (float)pow(2,14-AFS_SEL);
+
     for (int i = 0; i < 3; i++) {
-        accel[i] = rawaccel[i]/4096.0; // g 
+        accel[i] = (float)rawaccel[i]/scaleacc; // g 
     }
 
 
     // temperature
     *temp = (float) (rawtemp / 340.0) + 36.53;
-
 
 }
