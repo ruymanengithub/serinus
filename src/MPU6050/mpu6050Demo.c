@@ -1,7 +1,9 @@
-/**
+/*
+*
+* Testing mpu6050 acc/gyro sensor with RPI-Pico.
 * 
 * author: R. Azzollini 
-* 2022
+* 07.2022
 */
 
 #include <stdio.h>

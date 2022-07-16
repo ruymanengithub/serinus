@@ -1,7 +1,10 @@
 /*
 *
+* Library to interact with MPU6050 with RPI-PICO.
 *
+* R. Azzollini
 *
+* 07.2022
 */
 
 #include <math.h>
