@@ -5,6 +5,8 @@ add_subdirectory(Tests)
 
 add_subdirectory(MPU6050)
 
+add_subdirectory(PWM)
+
 add_executable(picodrone
     picodrone.c
 )
