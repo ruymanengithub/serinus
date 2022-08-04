@@ -18,7 +18,7 @@ const uint MEASURE_PIN = 5;
 
 
 #define COUNT_TOP 65535
-#define CLKDIV 4.f
+#define CLKDIV 2.f
 
 /*
 
