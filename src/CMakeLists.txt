@@ -1,5 +1,9 @@
 
-add_subdirectory(FlySkyIBus)
+cmake_minimum_required(VERSION 3.22.1)
+
+project(serinus)
+
+#add_subdirectory(FlySkyIBus)
 
 add_subdirectory(Tests)
 
@@ -7,13 +11,16 @@ add_subdirectory(MPU6050)
 
 add_subdirectory(PWM)
 
-add_executable(picodrone
-    picodrone.c
-)
+add_subdirectory(PID)
 
-pico_enable_stdio_usb(picodrone 1)
-pico_enable_stdio_uart(picodrone 1)
+add_executable(${PROJECT_NAME} picodrone.c)
 
-pico_add_extra_outputs(picodrone)
+target_link_libraries(${PROJECT_NAME} pico_stdlib hardware_gpio pico_binary_info
+    PID mpu6050)
 
-target_link_libraries(picodrone pico_stdlib)
+pico_enable_stdio_usb(${PROJECT_NAME} 1)
+pico_enable_stdio_uart(${PROJECT_NAME} 1)
+
+pico_add_extra_outputs(${PROJECT_NAME})
+
+
