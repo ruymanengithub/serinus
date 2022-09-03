@@ -16,7 +16,6 @@ void i2c_setup(i2c_inst_t* I2C_ID) {
 
 }
 
-
 uint8_t readI2CByte(i2c_inst_t* I2C_ID, uint8_t subAddress){
     // reads 1 Byte
     uint8_t data1B;
