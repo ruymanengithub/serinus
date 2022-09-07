@@ -1,9 +1,9 @@
 
 cmake_minimum_required(VERSION 3.22.1)
 
-project(serinus)
+#project(serinus)
 
-#add_subdirectory(FlySkyIBus)
+add_subdirectory(FlySkyIBus)
 
 add_subdirectory(Tests)
 
