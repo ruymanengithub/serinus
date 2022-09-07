@@ -16,7 +16,7 @@ void FlySkyIBus::begin(HardwareSerial& serial)
 
 void FlySkyIBus::begin(Stream& stream)
 {
-  this->stream = &stream; // FlySkyIBus.stream is a pointer to stream?
+  this->stream = &stream; // FlySkyIBus.stream is a pointer to stream
   this->state = DISCARD;
   this->last = millis();
   this->ptr = 0;
