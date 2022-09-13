@@ -68,6 +68,8 @@ typedef struct FSKY {
     long chksum;
     long lchksum;
     long bytes_rxed;
+    int attempts;
+    int uartReadable;
 
 } FSKY;
 

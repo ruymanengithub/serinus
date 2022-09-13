@@ -35,6 +35,7 @@ void FSIBus_Init(int UART_RX_PIN, FSKY *fsky)
     fsky->PROTOCOL_TIMEGAP  = 3; // Packets are received every ~7ms so use ~half that for the gap
     fsky->PROTOCOL_CHANNELS = hPROTOCOL_CHANNELS;
     fsky->bytes_rxed = 0;
+    fsky->uartReadable = 0;
     
     //fsky->PROTOCOL_COMMAND40 = hPROTOCOL_COMMAND40; // Command is always 0x40 ??
     //printf("%i\n", fsky->bytes_rxed);
@@ -55,10 +56,10 @@ void FSIBus_Init(int UART_RX_PIN, FSKY *fsky)
     uart_set_format(fsky->UART_ID, fsky->DATA_BITS, fsky->STOP_BITS, fsky->PARITY);
 
     // Turn off FIFO's - we want to do this character by character
-    //uart_set_fifo_enabled(UART_ID, false);
+    uart_set_fifo_enabled(fsky->UART_ID, false);
 
     // Turn ON? FIFO's - we want to read the whole buffer?
-    uart_set_fifo_enabled(fsky->UART_ID, true);
+    //uart_set_fifo_enabled(fsky->UART_ID, true);
 
     // Set up a RX interrupt
     // We need to set up the handler first
@@ -85,14 +86,17 @@ void FSIBus_Read(FSKY *fsky)
     fsky->chksum = 0;
     fsky->lchksum = 0; // we have to store the chksum low byte until we read the high byte
     fsky->MaxAttempts = 10;
+    fsky->attempts = 0;
 
     uint32_t last = time_us_32()/1000.;
     int attempts = 1;
     //uint8_t _PROTOCOL_COMMAND40 = fsky->PROTOCOL_COMMAND40;
     //printf("attempts, MaxAttempts: %i, %i\n", attempts, fsky->MaxAttempts);
 
+    fsky->uartReadable = 0;
+
     while (attempts < fsky->MaxAttempts)
-    //while (uart_is_enabled(fsky->UART_ID)) // This while condition is wrong
+    //while (uart_is_enabled(fsky->UART_ID)) // This while condition is wrong?
     {
         uint32_t now = time_us_32()/1000.; /* Returns the number of milliseconds passed since the 
         pico booted*/
@@ -104,8 +108,15 @@ void FSIBus_Read(FSKY *fsky)
 
         // copied from arduino! :
         //uint8_t v = stream->read(); /* "to access members of a structure through a pointer, use the arrow operator"*/
-        long v = uart_getc(fsky->UART_ID);
+        //long v = uart_getc(fsky->UART_ID);
         //printf("v: %i\n", v);
+
+        uint8_t v = -1;
+
+        if (uart_is_readable(fsky->UART_ID)) {
+            v = uart_getc(fsky->UART_ID);
+            fsky->uartReadable++;
+        }
 
         switch (fsky->state)
         {
@@ -127,11 +138,11 @@ void FSIBus_Read(FSKY *fsky)
                 fsky->buffer[fsky->ptr++] = v; 
                 fsky->chksum -= v;
                 fsky->bytes_rxed++;
-            if (fsky->ptr == fsky->len)
-            {
-                fsky->state = GET_CHKSUML; 
-            }
-            break;
+                if (fsky->ptr == fsky->len)
+                {
+                    fsky->state = GET_CHKSUML; 
+                }
+                break;
         
             case GET_CHKSUML: // CHECK-SUM Low Byte
                 fsky->lchksum = v;
@@ -166,8 +177,9 @@ void FSIBus_Read(FSKY *fsky)
                 default:
                     break;
         }
+        attempts++;
     }
-    attempts++;
+    fsky->attempts = attempts;
 
 };
 

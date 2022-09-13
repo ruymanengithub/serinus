@@ -27,7 +27,9 @@ int main(){
     while(1) {
 
         FSIBus_Read(&fsky);
-        printf("%i\n", fsky.bytes_rxed);
+        printf("bytes: %i\n", fsky.bytes_rxed);
+        printf("attempts: %i\n", fsky.attempts);
+        printf("read a byte: %i\n", fsky.uartReadable);
 
         gpio_put(LED_PIN, 1);
         sleep_ms(100);
