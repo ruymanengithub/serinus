@@ -25,11 +25,17 @@ int main(){
     FSIBus_Init(UART_RX_PIN, &fsky);
 
     while(1) {
-
+        //tight_loop_contents();
         FSIBus_Read(&fsky);
-        printf("bytes: %i\n", fsky.bytes_rxed);
         printf("attempts: %i\n", fsky.attempts);
-        printf("read a byte: %i\n", fsky.uartReadable);
+        printf("read : %i bytes\n", fsky.bytes_rxed);
+        printf("%i\t%i\t%i\t%i\t%i\t%i\n", 
+            FSIBus_readChannel(0, &fsky),
+            FSIBus_readChannel(1, &fsky),
+            FSIBus_readChannel(2, &fsky),
+            FSIBus_readChannel(3, &fsky),
+            FSIBus_readChannel(4, &fsky),
+            FSIBus_readChannel(5, &fsky));
 
         gpio_put(LED_PIN, 1);
         sleep_ms(100);
