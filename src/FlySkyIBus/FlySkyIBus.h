@@ -58,4 +58,3 @@ void FSIBus_Read_thenParse(FSKY *fsky);
 //void FSIBus_Read_Full(FSKY *fsky);
 uint16_t FSIBus_readChannel(uint8_t channelNr, FSKY *fsky);
 
-
