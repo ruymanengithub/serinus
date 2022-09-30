@@ -38,17 +38,13 @@ void FSIBus_Init(int UART_RX_PIN, FSKY *fsky)
     fsky->STOP_BITS  = 1;
     fsky->PARITY = UART_PARITY_NONE;
     fsky->PROTOCOL_LENGTH = hPROTOCOL_LENGTH;
-    fsky->PROTOCOL_OVERHEAD = 3; // <len><cmd><data....><chkl><chkh>
+    fsky->PROTOCOL_OVERHEAD = hPROTOCOL_OVERHEAD; // <len><cmd><data....><chkl><chkh>
     fsky->PROTOCOL_TIMEGAP  = 3; // Packets are received every ~7ms so use ~half that for the gap
     fsky->PROTOCOL_CHANNELS = hPROTOCOL_CHANNELS;
+    fsky->PROTOCOL_COMMAND40 = hPROTOCOL_COMMAND40;
     fsky->bytes_rxed = 0;
-    fsky->uartReadable = 0;
     fsky->attempts = 0;
-    
-    
-    //fsky->PROTOCOL_COMMAND40 = hPROTOCOL_COMMAND40; // Command is always 0x40 ??
-    //printf("%i\n", fsky->bytes_rxed);
-    //printf("%i\n", fsky->BAUD_RATE);
+    fsky->MaxAttempts = 10;
 
     // Set up our UART with a basic baud rate.
     uart_init(fsky->UART_ID, fsky->BAUD_RATE);
@@ -86,6 +82,7 @@ void FSIBus_Init(int UART_RX_PIN, FSKY *fsky)
 };
 
 
+/*
 
 void FSIBus_Listen(FSKY *fsky) 
 {
@@ -107,8 +104,221 @@ void FSIBus_Listen(FSKY *fsky)
     
 };
 
+*/
 
-void FSIBus_Read(FSKY *fsky) 
+void FSIBus_Read_thenParse(FSKY *fsky) 
+{
+
+    fsky->ptr = 0;
+    fsky->len = 0;
+    fsky->chksum = 0;
+    fsky->attempts = 0;
+    fsky->bytes_rxed = 0;
+
+    int NomDataLength = fsky->PROTOCOL_LENGTH-fsky->PROTOCOL_OVERHEAD;
+
+    while (fsky->attempts < fsky->MaxAttempts && fsky->bytes_rxed!=NomDataLength)
+    {
+        fsky->attempts++;
+        fsky->ptr = 0;
+        fsky->bytes_rxed = 0;
+
+        // initializing the buffer
+        for (int i=0; i<NomDataLength; i++)
+            fsky->buffer[i] = 0;
+
+        // initializing the channels
+        for (int i=0; i<fsky->PROTOCOL_CHANNELS; i++)
+            fsky->channel[i] = 0;
+
+        uint8_t v;  
+        int rawptr = 0; // index within the raw buffer
+        uint8_t rawbuffer[fsky->PROTOCOL_LENGTH];   // raw buffer holds all the bytes in PROTOCOL_LENGTH, 
+                                                    // then we parse it
+
+        for (int i=0; i<fsky->PROTOCOL_LENGTH; i++)
+            rawbuffer[i] = 0;
+
+        int gapus = 1000 * fsky->PROTOCOL_TIMEGAP;
+
+        while (uart_is_readable_within_us(fsky->UART_ID, gapus) && rawptr<fsky->PROTOCOL_LENGTH)
+        //while (uart_is_readable(fsky->UART_ID) && rawptr<fsky->PROTOCOL_LENGTH)
+        {
+            v = uart_getc(fsky->UART_ID);
+            rawbuffer[rawptr++] = v;
+        }
+
+        // Parsing begins
+        
+        if ((rawbuffer[0] != fsky->PROTOCOL_LENGTH) || (rawbuffer[1] != fsky->PROTOCOL_COMMAND40))
+        {
+            //printf("First byte is wrong: %d\n", rawbuffer[0]);
+            continue;
+        } 
+
+        rawptr = 0;
+        fsky->ptr = 0;
+
+        v = rawbuffer[0];
+
+        fsky->len = v - fsky->PROTOCOL_OVERHEAD;
+        fsky->chksum = 0xFFFF - v;
+
+        for (int i=1; i<NomDataLength+1; i++)
+        {
+            v = rawbuffer[i];
+            fsky->buffer[fsky->ptr++] = v;
+            fsky->chksum -= v;
+            fsky->bytes_rxed++;
+        }
+
+        if ((fsky->chksum == (rawbuffer[NomDataLength+1] | rawbuffer[NomDataLength+2]<<8)) &&\
+            (fsky->buffer[0] == fsky->PROTOCOL_COMMAND40))
+        {
+            for (uint8_t i = 1; i < fsky->PROTOCOL_CHANNELS * 2 + 1; i += 2)
+                fsky->channel[i / 2] = fsky->buffer[i] | (fsky->buffer[i + 1] << 8);
+        } else
+        {
+            fsky->bytes_rxed = 0;
+        }
+    }
+};
+
+/*
+
+void FSIBus_Read_thenParse_v0(FSKY *fsky) 
+{
+
+    fsky->state = DISCARD;
+    fsky->ptr = 0;
+    fsky->len = 0;
+    fsky->chksum = 0;
+    fsky->lchksum = 0; // we have to store the chksum low byte until we read the high byte
+    fsky->attempts = 0;
+    //fsky->uartReadable = 0;
+    fsky->bytes_rxed = 0;
+
+    int NomDataLength = fsky->PROTOCOL_LENGTH-fsky->PROTOCOL_OVERHEAD;
+
+    while (fsky->attempts < fsky->MaxAttempts && fsky->bytes_rxed!=NomDataLength)
+    {
+        fsky->attempts++;
+        fsky->ptr = 0;
+        fsky->bytes_rxed = 0;
+
+        for (int i=0; i<NomDataLength; i++)
+            fsky->buffer[i] = 0;
+
+        for (int i=0; i<fsky->PROTOCOL_CHANNELS; i++)
+            fsky->channel[i] = 0;
+
+
+        //fsky->state = GET_LENGTH;  
+        uint8_t v;  
+        int rawptr = 0; // index within the raw buffer
+        uint8_t rawbuffer[fsky->PROTOCOL_LENGTH]; // raw buffer holds all the bytes in PROTOCOL_LENGTH, 
+                                                // then we parse it
+
+        for (int i=0; i<fsky->PROTOCOL_LENGTH; i++)
+            rawbuffer[i] = 0;
+
+
+        while (uart_is_readable(fsky->UART_ID) && rawptr < fsky->PROTOCOL_LENGTH) 
+        {
+            v = uart_getc(fsky->UART_ID);
+            rawbuffer[rawptr++] = v; 
+            //fsky->bytes_rxed++;
+        }
+
+        
+        if (rawbuffer[0] != fsky->PROTOCOL_LENGTH) 
+        {
+            //printf("First byte is wrong: %d\n", rawbuffer[0]);
+            continue;
+        } else
+        {
+            fsky->state = GET_LENGTH;
+        }
+
+        rawptr = 0;
+        fsky->ptr = 0;
+
+        while (rawptr < fsky->PROTOCOL_LENGTH)
+        {
+            v = rawbuffer[rawptr++];
+
+            switch (fsky->state)
+            {
+                case GET_LENGTH:
+                    fsky->ptr = 0;
+                    fsky->len = v - fsky->PROTOCOL_OVERHEAD;
+                    fsky->chksum = 0xFFFF - v;
+                    fsky->state = GET_DATA;
+                    break;
+
+                case GET_DATA:
+                    fsky->buffer[fsky->ptr++] = v; 
+                    fsky->chksum -= v;
+                    fsky->bytes_rxed++;
+                    if (fsky->ptr == fsky->len)
+                    {
+                        fsky->state = GET_CHKSUML; 
+                        //printf("fsky->ptr == fsky->len\n");
+                    }
+                    break;
+        
+                case GET_CHKSUML: // CHECK-SUM Low Byte
+                    fsky->lchksum = v;
+                    fsky->state = GET_CHKSUMH; 
+                    break;
+
+                case GET_CHKSUMH: // CHECK-SUM Hight Byte
+                    // Validate checksum
+                    if (fsky->chksum == (v << 8 | fsky->lchksum)) // adding low and hi check-sum bytes
+                    {
+                        // Execute command - we only know command 0x40
+                        switch (fsky->buffer[0])
+                        {
+                            case PROTOCOL_COMMAND40:
+                                // Valid - extract channel data
+                                for (uint8_t i = 1; i < fsky->PROTOCOL_CHANNELS * 2 + 1; i += 2)
+                                {
+                                    fsky->channel[i / 2] = fsky->buffer[i] | (fsky->buffer[i + 1] << 8);
+                                }
+                                break;
+
+                            default:
+                                printf("\ndid not find command40!\n");
+                                break;
+                        }
+                    } else
+                    {
+                        
+                        fsky->bytes_rxed = 0;
+                        fsky->state = DISCARD;
+                    }
+                    break;
+
+                case DISCARD:
+                    break;
+                default:
+                    fsky->state = DISCARD;
+                    break;
+            }
+        }
+
+
+
+    }
+
+
+};
+
+*/
+
+/*
+
+void FSIBus_Read_whileParsing(FSKY *fsky) 
 {
 
     //fsky->stream = &stream; // FlySkyIBus.stream is a pointer to stream?
@@ -117,33 +327,50 @@ void FSIBus_Read(FSKY *fsky)
     fsky->len = 0;
     fsky->chksum = 0;
     fsky->lchksum = 0; // we have to store the chksum low byte until we read the high byte
-    fsky->MaxAttempts = 10;
+    //fsky->MaxAttempts = 10;
     fsky->attempts = 0;
-    fsky->uartReadable = 0;
-
-    //char buffer[hPROTOCOL_LENGTH];
-    fsky->bytes_rxed = 0;
+    //fsky->uartReadable = 0;
+    fsky->bytes_rxed=0;
 
     int NomDataLength = fsky->PROTOCOL_LENGTH-fsky->PROTOCOL_OVERHEAD;
 
-    for (int i=0; i<NomDataLength; i++)
-        fsky->buffer[i] = 0;
-    
-    while (fsky->attempts < fsky->MaxAttempts && fsky->bytes_rxed==0)
+    while (fsky->attempts < fsky->MaxAttempts && fsky->bytes_rxed!=NomDataLength)
     {
         fsky->attempts++;
+        fsky->ptr = 0;
+        fsky->bytes_rxed = 0;
 
         fsky->state = GET_LENGTH;  
         uint8_t v;  
 
-        while (uart_is_readable(fsky->UART_ID) && fsky->ptr < NomDataLength) 
+        for (int i=0; i<NomDataLength; i++)
+            fsky->buffer[i] = 0;
+
+        for (int i=0; i<fsky->PROTOCOL_CHANNELS; i++)
+            fsky->channel[i] = 0;
+ 
+
+        while (uart_is_readable_within_us(fsky->UART_ID, 0) && (fsky->state != DISCARD))
         {
-            v = uart_getc(fsky->UART_ID);
+
+            v = uart_getc(fsky->UART_ID); // reads one character
+
+            //if (v != fsky->PROTOCOL_LENGTH)
+            //{
+            //    fsky->state = DISCARD;
+            //} else
+            //{
+            //    fsky->ptr = 0;
+            //    fsky->len = v - fsky->PROTOCOL_OVERHEAD;
+            //    fsky->chksum = 0xFFFF - v;
+            //    fsky->state = GET_DATA;
+            //}
+
 
             switch (fsky->state)
             {
                 case GET_LENGTH:
-                    if (v <= fsky->PROTOCOL_LENGTH)
+                    if (v == fsky->PROTOCOL_LENGTH)
                     {
                         fsky->ptr = 0;
                         fsky->len = v - fsky->PROTOCOL_OVERHEAD;
@@ -187,6 +414,7 @@ void FSIBus_Read(FSKY *fsky)
                                 break;
 
                             default:
+                                //printf("\ndid not find command40!\n");
                                 break;
                         }
                     }
@@ -196,12 +424,19 @@ void FSIBus_Read(FSKY *fsky)
                 case DISCARD:
                     break;
                 default:
+                    fsky->state = DISCARD;
                     break;
             }
         }
     }
 
+
 };
+
+*/
+
+/*
+
 
 void FSIBus_Read_Old(FSKY *fsky) 
 {
@@ -214,7 +449,7 @@ void FSIBus_Read_Old(FSKY *fsky)
     fsky->lchksum = 0; // we have to store the chksum low byte until we read the high byte
     fsky->MaxAttempts = 10;
     fsky->attempts = 0;
-    fsky->uartReadable = 0;
+    //fsky->uartReadable = 0;
 
     //char buffer[hPROTOCOL_LENGTH];
     fsky->bytes_rxed = 0;
@@ -265,9 +500,6 @@ void FSIBus_Read_Old(FSKY *fsky)
                 case GET_CHKSUMH: // CHECK-SUM Hight Byte
                     // Validate checksum
                     if (fsky->chksum == (v << 8) + fsky->lchksum) 
-                        /* << = left shifting an integer “x” with an 
-                        integer “y” denoted as ‘(x<<y)’ is equivalent to multiplying 
-                        x with 2^y (2 raised to power y).*/
                     {
                         // Execute command - we only know command 0x40
                         switch (fsky->buffer[0])
@@ -298,6 +530,8 @@ void FSIBus_Read_Old(FSKY *fsky)
     printf("Buffer In\n");
 
 };
+
+*/
 
 
 uint16_t FSIBus_readChannel(uint8_t channelNr, FSKY *fsky)

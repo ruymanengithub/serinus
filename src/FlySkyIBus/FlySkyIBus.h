@@ -20,31 +20,10 @@
 */
 
 #define hPROTOCOL_LENGTH 0x20
-#define hPROTOCOL_OVERHEAD 
+#define hPROTOCOL_OVERHEAD 3
 #define hPROTOCOL_CHANNELS 6
-#define PROTOCOL_COMMAND40 0x40
+#define hPROTOCOL_COMMAND40 0x40
 
-/*
-//void on_uart_rx;
-void on_uart_rx(void) {
-    while (uart_is_readable(this->UART_ID)) {
-        //uint8_t ch = uart_getc(UART_ID);
-        uart_read_blocking(this->UART_ID, this->buffer, this->PROTOCOL_LENGTH);
-        this->bytes_rxed +=PROTOCOL_LENGTH;
-    };
-};
-*/
-
-enum State
-{
-  GET_LENGTH,
-  GET_DATA,
-  GET_CHKSUML,
-  GET_CHKSUMH,
-  DISCARD,
-};
-
- 
 
 typedef struct FSKY {
 
@@ -57,10 +36,8 @@ typedef struct FSKY {
     int PROTOCOL_OVERHEAD; //  = 3; // <len><cmd><data....><chkl><chkh>
     int PROTOCOL_TIMEGAP; //  = 3; // Packets are received every ~7ms so use ~half that for the gap
     int PROTOCOL_CHANNELS; // = 6;
-    //uint8_t PROTOCOL_COMMAND40; // = 0x40; // Command is always 0x40 ??
+    int PROTOCOL_COMMAND40; // = 0x40; // Command is always 0x40 ??
 
-    int state;
-    //Stream* stream; // pointer
     long last;
     int MaxAttempts;
     int buffer[29];
@@ -71,14 +48,14 @@ typedef struct FSKY {
     long lchksum;
     long bytes_rxed;
     int attempts;
-    int uartReadable;
 
 } FSKY;
 
 //void on_uart_rx(void);
 void FSIBus_Init(int UART_RX_PIN, FSKY *fsky);
-void FSIBus_Read(FSKY *fsky);
-void FSIBus_Read_Full(FSKY *fsky);
+//void FSIBus_Read_whileParsing(FSKY *fsky);
+void FSIBus_Read_thenParse(FSKY *fsky);
+//void FSIBus_Read_Full(FSKY *fsky);
 uint16_t FSIBus_readChannel(uint8_t channelNr, FSKY *fsky);
 
 

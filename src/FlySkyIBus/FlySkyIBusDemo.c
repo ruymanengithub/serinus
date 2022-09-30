@@ -26,10 +26,10 @@ int main(){
 
     while(1) {
         //tight_loop_contents();
-        FSIBus_Read(&fsky);
+        FSIBus_Read_thenParse(&fsky);
         printf("attempts: %i\n", fsky.attempts);
         printf("read : %i bytes\n", fsky.bytes_rxed);
-        printf("%i\t%i\t%i\t%i\t%i\t%i\n", 
+        printf("%d\t%d\t%d\t%d\t%d\t%d\n", 
             FSIBus_readChannel(0, &fsky),
             FSIBus_readChannel(1, &fsky),
             FSIBus_readChannel(2, &fsky),
