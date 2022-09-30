@@ -30,20 +30,19 @@ int main(){
         printf("attempts: %i\n", fsky.attempts);
         printf("read : %i bytes\n", fsky.bytes_rxed);
         printf("%d\t%d\t%d\t%d\t%d\t%d\n", 
-            FSIBus_readChannel(0, &fsky),
-            FSIBus_readChannel(1, &fsky),
-            FSIBus_readChannel(2, &fsky),
-            FSIBus_readChannel(3, &fsky),
-            FSIBus_readChannel(4, &fsky),
-            FSIBus_readChannel(5, &fsky));
+            FSIBus_readNormChannel(FSthrust, &fsky),
+            FSIBus_readNormChannel(FSyaw, &fsky),
+            FSIBus_readNormChannel(FSpitch, &fsky),
+            FSIBus_readNormChannel(FSroll, &fsky),
+            FSIBus_readNormChannel(FSdileft, &fsky),
+            FSIBus_readNormChannel(FSdiright, &fsky));
 
         gpio_put(LED_PIN, 1);
         sleep_ms(100);
         gpio_put(LED_PIN, 0);
 
         sleep_ms(1000);
-
-
+    
     }
 
 };

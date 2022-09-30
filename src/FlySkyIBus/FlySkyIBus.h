@@ -24,6 +24,16 @@
 #define hPROTOCOL_CHANNELS 6
 #define hPROTOCOL_COMMAND40 0x40
 
+enum ChannelFS
+{
+    FSroll,
+    FSpitch,
+    FSthrust,
+    FSyaw,
+    FSdileft,
+    FSdiright
+};
+
 
 typedef struct FSKY {
 
@@ -51,10 +61,7 @@ typedef struct FSKY {
 
 } FSKY;
 
-//void on_uart_rx(void);
 void FSIBus_Init(int UART_RX_PIN, FSKY *fsky);
-//void FSIBus_Read_whileParsing(FSKY *fsky);
 void FSIBus_Read_thenParse(FSKY *fsky);
-//void FSIBus_Read_Full(FSKY *fsky);
 uint16_t FSIBus_readChannel(uint8_t channelNr, FSKY *fsky);
-
+int16_t FSIBus_readNormChannel(uint8_t channelNr, FSKY *fsky);

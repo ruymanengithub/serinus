@@ -11,21 +11,9 @@
 
 static FSKY *fsky;
 
-void FSIBus_Read(FSKY *fsky);
-void FSIBus_Listen(FSKY *fsky);
+//void FSIBus_Read(FSKY *fsky);
+//void FSIBus_Listen(FSKY *fsky);
 
-// RX interrupt handler
-void on_uart_rx(void) {
-    while (uart_is_readable(fsky->UART_ID)) {
-        fsky->attempts++;
-        printf("\nattempt: %d", fsky->attempts);
-        //uint8_t ch = uart_getc(UART_ID);
-        uint8_t buffer[hPROTOCOL_LENGTH];
-        uart_read_blocking(fsky->UART_ID, buffer, hPROTOCOL_LENGTH);
-        fsky->bytes_rxed += hPROTOCOL_LENGTH;
-        //FSIBus_Read(fsky);
-    };
-};
 
 
 void FSIBus_Init(int UART_RX_PIN, FSKY *fsky) 
@@ -142,6 +130,53 @@ void FSIBus_Read_thenParse(FSKY *fsky)
             fsky->bytes_rxed = 0;
         }
     }
+};
+
+int16_t FSIBus_readNormChannel(uint8_t channelNr, FSKY *fsky)
+{
+  
+  uint16_t value;
+  float bias, scale;
+
+  switch (channelNr)
+  {
+    case FSthrust:
+        value = fsky->channel[FSthrust];
+        bias = 1000;
+        scale = 1/10.;
+        break;
+    case FSyaw:
+        value = fsky->channel[FSyaw];
+        bias = 1500;
+        scale = 1/5.;
+        break;
+    case FSpitch:
+        value = fsky->channel[FSpitch];
+        bias = 1500;
+        scale = 1/5.;
+        break;
+    case FSroll:
+        value = fsky->channel[FSroll];
+        bias = 1500;
+        scale = 1/5.;
+        break;
+    case FSdileft:
+        value = fsky->channel[FSdileft];
+        bias = 1000;
+        scale = 1/10.;
+        break;
+    case FSdiright:
+        value = fsky->channel[FSdiright];
+        bias = 1000;
+        scale = 1/10.;
+        break;
+    default:
+        value = 1;
+        bias = 0;
+        scale = 0;
+        break;
+  }
+  return ((value-bias)*scale);
 };
 
 uint16_t FSIBus_readChannel(uint8_t channelNr, FSKY *fsky)
