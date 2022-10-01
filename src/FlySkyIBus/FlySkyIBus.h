@@ -9,8 +9,8 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/uart.h"
-#include "hardware/irq.h"
-#include "hardware/timer.h"
+//#include "hardware/irq.h"
+//#include "hardware/timer.h"
 
 
 /*
@@ -35,7 +35,7 @@ enum ChannelFS
 };
 
 
-typedef struct FSKY {
+typedef struct {
 
     uart_inst_t* UART_ID; // = uart1;
     unsigned long BAUD_RATE; // = 115200;
