@@ -52,6 +52,8 @@ float measure_duty_cycle(uint gpio) {
 
 */
 
+void_setup_pwm(uint PWMPIN);
+
 //void setup_pwm(uint PWMPINS[4]) {
 void setup_pwm(uint PWMPIN) {
 
@@ -62,7 +64,7 @@ void setup_pwm(uint PWMPIN) {
     // configuration of PWM pins
     //for (int j = 0; j < (int)count_of(PWMPINS); ++j) {
     //    uint PWMPIN = PWMPINS[j];
-        pwm_init(pwm_gpio_to_slice_num(PWMPIN), &cfg, true);
-        gpio_set_function(PWMPIN, GPIO_FUNC_PWM);
+    pwm_init(pwm_gpio_to_slice_num(PWMPIN), &cfg, true);
+    gpio_set_function(PWMPIN, GPIO_FUNC_PWM);
     //}
 }
