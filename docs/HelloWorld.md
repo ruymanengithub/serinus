@@ -1,6 +1,7 @@
+---
 layout: page
 title: "Home"
-permalink: /serinus
-
+permalink: /helloworld
+---
 
 Hello World!
