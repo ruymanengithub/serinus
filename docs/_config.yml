@@ -21,7 +21,7 @@
 title: "Serinus"
 email: some.email@gmail.com
 description: 
-  Hobby project: building a quadcopter drone with a Raspberry-pi Pico.
+  "Hobby project: building a quadcopter drone with a Raspberry-pi Pico."
 baseurl: "/serinus" # the subpath of your site, e.g. /blog
 url: "https://ruymanengithub.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: RAzzollini
