@@ -1,6 +1,6 @@
 /*
 *
-* Library to interact with MPU6050 with RPI-PICO.
+* Library for RPI-PICO to interact with MPU6050.
 *
 * R. Azzollini
 *
