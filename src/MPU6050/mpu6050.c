@@ -1,4 +1,9 @@
-
+/* 
+* mpu6050 functions.
+*
+* R. Azzollini
+* July 2022.
+*/
 
 #include "mpu6050.h"
 
