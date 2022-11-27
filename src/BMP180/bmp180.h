@@ -1,6 +1,6 @@
 /*
 *
-* Library for RPI-PICO to interact with BMPU180.
+* Library for RPI-PICO to interact with BMP180.
 *
 * R. Azzollini
 *
@@ -9,8 +9,11 @@
 
 #include <math.h>
 #include "pico/stdlib.h"
-#include "pico/binary_info.h"
-#include "hardware/i2c.h"
+#include "../i2c/i2c.h"
 
-#define I2C_SDA_PIN 2
-#define I2C_SCL_PIN 3
+extern BMP_SDA_PIN, BMP_SCL_PIN;
+extern addrBMP;
+
+void bmp180_read_raw(i2c_inst_t* IC2_ID, int16_t* pressure, int16_t* temp);
+void bmp180_read_cal(i2c_inst_t* IC2_ID, float* pressure, float* temp);
+
