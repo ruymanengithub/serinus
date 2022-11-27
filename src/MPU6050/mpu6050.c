@@ -7,27 +7,21 @@
 
 #include "mpu6050.h"
 
-//void i2c_setup(i2c_inst_t* I2C_ID, uint pI2C_SDA_PIN, uint pI2C_SCL_PIN) {
-void i2c_setup(i2c_inst_t* I2C_ID) {
-    // sets up i2c IF in RP Pico
-    i2c_init(I2C_ID, 400 * 1000);
-    gpio_set_function(I2C_SDA_PIN, GPIO_FUNC_I2C);
-    gpio_set_function(I2C_SCL_PIN, GPIO_FUNC_I2C);
-    gpio_pull_up(I2C_SDA_PIN);
-    gpio_pull_up(I2C_SCL_PIN);
+int MPU_SDA_PIN = 2;
+int MPU_SCL_PIN = 3;
+int FS_SEL = 0;
+int AFS_SEL = 2;
 
-    // Make the I2C pins available to picotool
-    bi_decl(bi_2pins_with_func(I2C_SDA_PIN, I2C_SCL_PIN, GPIO_FUNC_I2C));
+int ACCEL_CONFIG_REG = 0x1C; // register
+int GYRO_CONFIG_REG = 0x1B; // register
 
-}
+int SELF_TEST_X = 0x0D;
+int SELF_TEST_Y = 0X0E;
+int SELF_TEST_Z = 0X0F;
+int SELF_TEST_A = 0X10;
 
-uint8_t readI2CByte(i2c_inst_t* I2C_ID, uint8_t subAddress){
-    // reads 1 Byte
-    uint8_t data1B;
-    i2c_write_blocking(I2C_ID, addr, &subAddress, 1, true);
-    i2c_read_blocking(I2C_ID, addr, &data1B, 1, false);
-    return data1B;
-}
+// By default these devices  are on bus address 0x68
+int addrMPU = 0x68;  // 104
 
 void mpu6050_selftest(i2c_inst_t* I2C_ID, float destination[6]) 
 // Should return percent deviation from factory trim values, +/- 14 or less deviation is a pass
@@ -41,17 +35,17 @@ void mpu6050_selftest(i2c_inst_t* I2C_ID, float destination[6])
    // 0xF0 = 11110000
    dst2[0] = ACCEL_CONFIG_REG;
    dst2[1] = 0xF0; // 0b_111_10_000
-   i2c_write_blocking(I2C_ID, addr, dst2, 2, true); // Enable self test on all three axes and set accelerometer range to +/- 8 g
+   i2c_write_blocking(I2C_ID, addrMPU, dst2, 2, true); // Enable self test on all three axes and set accelerometer range to +/- 8 g
    // 0xE0 = 11100000
    dst2[0] = GYRO_CONFIG_REG;
    dst2[1] = 0xE0;
-   i2c_write_blocking(I2C_ID, addr, dst2, 2, true); // Enable self test on all three axes and set gyro range to +/- 250 degrees/s
+   i2c_write_blocking(I2C_ID, addrMPU, dst2, 2, true); // Enable self test on all three axes and set gyro range to +/- 250 degrees/s
    sleep_ms(250); // Delay a while to let the device execute the self-test
 
-   rawData[0] = readI2CByte(I2C_ID, SELF_TEST_X); // X-axis self-test results
-   rawData[1] = readI2CByte(I2C_ID, SELF_TEST_Y); // Y-axis self-test results
-   rawData[2] = readI2CByte(I2C_ID, SELF_TEST_Z); // Z-axis self-test results
-   rawData[3] = readI2CByte(I2C_ID, SELF_TEST_A); // Mixed-axis self-test results
+   rawData[0] = readI2CByte(I2C_ID, addrMPU, SELF_TEST_X); // X-axis self-test results
+   rawData[1] = readI2CByte(I2C_ID, addrMPU, SELF_TEST_Y); // Y-axis self-test results
+   rawData[2] = readI2CByte(I2C_ID, addrMPU, SELF_TEST_Z); // Z-axis self-test results
+   rawData[3] = readI2CByte(I2C_ID, addrMPU, SELF_TEST_A); // Mixed-axis self-test results
    // Extract the acceleration test results first
    selfTest[0] = (rawData[0] >> 3) | (rawData[3] & 0x30) >> 4 ; // XA_TEST result is a five-bit unsigned integer
    selfTest[1] = (rawData[1] >> 3) | (rawData[3] & 0x0C) >> 4 ; // YA_TEST result is a five-bit unsigned integer
@@ -86,17 +80,17 @@ void mpu6050_reset(i2c_inst_t* I2C_ID) {
     // Two byte reset. First byte register, second byte data
     // There are a load more options to set up the device in different ways that could be added here
     uint8_t buf[] = {0x6B, 0x00}; // 107, 0
-    i2c_write_blocking(I2C_ID, addr, buf, 2, false);
+    i2c_write_blocking(I2C_ID, addrMPU, buf, 2, false);
 
     // configure accel.
     uint8_t maskacc = AFS_SEL << 3; // 0b0000XX000
     uint8_t acc[] = {ACCEL_CONFIG_REG, maskacc};  
-    i2c_write_blocking(I2C_ID, addr, acc, 2, false); // true to keep master control of bus
+    i2c_write_blocking(I2C_ID, addrMPU, acc, 2, false); // true to keep master control of bus
     
     // configure gyro
     uint8_t maskgyro = FS_SEL << 3; // 0b0000XX000
     uint8_t gyro[] = {GYRO_CONFIG_REG, maskgyro};  
-    i2c_write_blocking(I2C_ID, addr, gyro, 2, false); // true to keep master control of bus
+    i2c_write_blocking(I2C_ID, addrMPU, gyro, 2, false); // true to keep master control of bus
 
 }
 
@@ -112,8 +106,8 @@ void mpu6050_read_raw(i2c_inst_t* I2C_ID, int16_t accel[3], int16_t gyro[3], int
 
     // Start reading acceleration registers from register 0x3B for 6 bytes
     uint8_t val = 0x3B; // 59
-    i2c_write_blocking(I2C_ID, addr, &val, 1, true); // true to keep master control of bus
-    i2c_read_blocking(I2C_ID, addr, buffer, 6, false);
+    i2c_write_blocking(I2C_ID, addrMPU, &val, 1, true); // true to keep master control of bus
+    i2c_read_blocking(I2C_ID, addrMPU, buffer, 6, false);
 
     for (int i = 0; i < 3; i++) {
         accel[i] = (buffer[i * 2] << 8 | buffer[(i * 2) + 1]);
@@ -122,8 +116,8 @@ void mpu6050_read_raw(i2c_inst_t* I2C_ID, int16_t accel[3], int16_t gyro[3], int
     // Now gyro data from reg 0x43 for 6 bytes
     // The register is auto incrementing on each read
     val = 0x43; // 67
-    i2c_write_blocking(I2C_ID, addr, &val, 1, true);
-    i2c_read_blocking(I2C_ID, addr, buffer, 6, false);  // False - finished with bus
+    i2c_write_blocking(I2C_ID, addrMPU, &val, 1, true);
+    i2c_read_blocking(I2C_ID, addrMPU, buffer, 6, false);  // False - finished with bus
 
     for (int i = 0; i < 3; i++) {
         gyro[i] = (buffer[i * 2] << 8 | buffer[(i * 2) + 1]);;
@@ -132,8 +126,8 @@ void mpu6050_read_raw(i2c_inst_t* I2C_ID, int16_t accel[3], int16_t gyro[3], int
     // Now temperature from reg 0x41 for 2 bytes
     // The register is auto incrementing on each read
     val = 0x41; // 65
-    i2c_write_blocking(I2C_ID, addr, &val, 1, true);
-    i2c_read_blocking(I2C_ID, addr, buffer, 2, false);  // False - finished with bus
+    i2c_write_blocking(I2C_ID, addrMPU, &val, 1, true);
+    i2c_read_blocking(I2C_ID, addrMPU, buffer, 2, false);  // False - finished with bus
 
     *temp = buffer[0] << 8 | buffer[1];
 }
@@ -166,3 +160,4 @@ void mpu6050_read_cal(i2c_inst_t* I2C_ID, float accel[3], float gyro[3], float *
     *temp = (float) (rawtemp / 340.0) + 36.53;
 
 }
+

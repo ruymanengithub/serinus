@@ -28,12 +28,15 @@ void run_selftest(i2c_inst_t* I2C_ID) {
 
 int main() {
 
+    stdio_init_all();
+
     i2c_inst_t* I2C_ID = i2c1;
     
-    stdio_init_all();
     printf("\nHello, MPU6050! Reading raw data from Registers...\n");
     
-    i2c_setup(I2C_ID);
+    i2c_init(I2C_ID, 400 * 1000);
+
+    i2c_setup(MPU_SDA_PIN, MPU_SCL_PIN);
     mpu6050_reset(I2C_ID);
     
     //run_selftest(I2C_ID);
