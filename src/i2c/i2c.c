@@ -23,10 +23,34 @@ void i2c_setup(int I2C_SDA_PIN, int I2C_SCL_PIN) {
 
 }
 
-uint8_t readI2CByte(i2c_inst_t* I2C_ID, int addr, uint8_t reg){
+uint8_t readI2C_1Byte(i2c_inst_t* I2C_ID, int addr, uint8_t reg){
     // reads 1 Byte
-    uint8_t data1B;
+    uint8_t data;
     i2c_write_blocking(I2C_ID, addr, &reg, 1, true);
-    i2c_read_blocking(I2C_ID, addr, &data1B, 1, false);
-    return data1B;
+    i2c_read_blocking(I2C_ID, addr, &data1B, N, false);
+    return data;
+}
+
+void readI2C_2Bytes(i2c_inst_t* I2C_ID, int addr, uint8_t reg){
+    // reads 2 Bytes
+    uint16_t data2B;
+    i2c_write_blocking(I2C_ID, addr, &reg, 1, true);
+    i2c_read_blocking(I2C_ID, addr, data2B, 2, false);
+    return data2B;
+}
+
+void readI2C_4Bytes(i2c_inst_t* I2C_ID, int addr, uint8_t reg){
+    // reads 4 Bytes
+    uint32_t data4B;
+    i2c_write_blocking(I2C_ID, addr, &reg, 1, true);
+    i2c_read_blocking(I2C_ID, addr, data4B, 4, false);
+    return data4B;
+}
+
+void readI2C_8Bytes(i2c_inst_t* I2C_ID, int addr, uint8_t reg){
+    // reads 8 Bytes
+    uint32_t data8B;
+    i2c_write_blocking(I2C_ID, addr, &reg, 1, true);
+    i2c_read_blocking(I2C_ID, addr, data8B, 8, false);
+    return data8B;
 }

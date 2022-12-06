@@ -15,6 +15,7 @@
 //const int I2C_SCL_PIN;
 
 void i2c_setup(int I2C_SDA_PIN, int I2C_SCL_PIN);
-uint8_t readI2CByte(i2c_inst_t* I2C_ID, int addr, uint8_t reg);
-
-
+uint8_t readI2C_1Byte(i2c_inst_t* I2C_ID, int addr, uint8_t reg);
+uint16_t readI2C_2Bytes(i2c_inst_t* I2C_ID, int addr, uint8_t reg);
+uint32_t readI2C_4Bytes(i2c_inst_t* I2C_ID, int addr, uint8_t reg);
+uint64_t readI2C_8Bytes(i2c_inst_t* I2C_ID, int addr, uint8_t reg);
