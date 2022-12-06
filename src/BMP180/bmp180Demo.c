@@ -16,8 +16,8 @@
 #include "bmp180.h"
 #include "../i2c/i2c.h"
 
-const int BMP_SDA_PIN = 2;
-const int BMP_SCL_PIN = 3;
+//BMP_SDA_PIN = 2;
+//BMP_SCL_PIN = 3;
 
 int main() {
 

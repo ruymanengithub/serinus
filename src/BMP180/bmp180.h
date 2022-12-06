@@ -11,8 +11,10 @@
 #include "pico/stdlib.h"
 #include "../i2c/i2c.h"
 
-extern BMP_SDA_PIN, BMP_SCL_PIN;
-extern addrBMPw, addrBMPr;
+extern int BMP_SDA_PIN;
+extern int BMP_SCL_PIN;
+extern uint8_t addrBMPw;
+extern uint8_t addrBMPr;
 
 
 // Operating Modes
@@ -30,10 +32,10 @@ enum BMP180_modes{
 
 
 typedef struct BMP180_CAL {
-int AC1, AC2, AC3; 
-uint AC4, AC5, AC6; // = 0xB0;  // R   Calibration data (16 bits)
-int B1, B2, MB, MC, MD;  // = 0xB6;  // R   Calibration data (16 bits)
-} BMP180_CAL;
+int16_t AC1, AC2, AC3; 
+uint16_t AC4, AC5, AC6; // = 0xB0;  // R   Calibration data (16 bits)
+int16_t B1, B2, MB, MC, MD;  // = 0xB6;  // R   Calibration data (16 bits)
+}BMP180_CAL;
 
 BMP180_CAL read_BMP180cal(i2c_inst_t* I2C_ID);
 void bmp180_readRawTemp(i2c_inst_t* I2C_ID, int16_t* temp);
