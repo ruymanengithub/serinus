@@ -194,10 +194,14 @@ float bmp180_readCompPressure(i2c_inst_t *I2C_ID, int BMP180mode)
 
 }
 
-float getAltitude(float Pressure)
+double getAltitude(float Pressure)
+// implements the international barometric formula
 {
-    float Altitude = 0.0;
-    return Altitude;
+    double p0 = 101325.0; // Pa
+    double power = 1./5.255;
+    double altitude = 44330.0 * (1.-pow((Pressure/p0), power));
+
+    return altitude;
 }
 
 

@@ -42,4 +42,4 @@ void bmp180_readRawPressure(i2c_inst_t* I2C_ID, int16_t* pressure,
 float bmp180_readCompTemp(i2c_inst_t* I2C_ID);
 float bmp180_readCompPressure(i2c_inst_t* I2C_ID, int BMP180mode);
 
-float getAltitude(float Pressure);
+double getAltitude(float Pressure);
