@@ -30,7 +30,19 @@ int main() {
     printf("\nHello, BMP180!\n");
     
     i2c_setup(BMP_SDA_PIN, BMP_SCL_PIN);
+
+    float* temperature;
+    long* pressure;
+    int BMP180mode = 1; // standard
+    int DebugMode = 1;
+
+    int success = bmp180_readCompTempPressure(I2C_ID, temperature, pressure, 
+        BMP180mode, DebugMode);
     
+    printf("Temperature: %.2f C", *temperature);
+    printf("Pressure: %i Pa", *pressure);
+
+    /*
     while (1) {
 
         // ...
@@ -38,9 +50,8 @@ int main() {
         sleep_ms(500);
 
     }
+    */
     
 
-
-//#endif
     return 0;
 }

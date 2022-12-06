@@ -56,10 +56,10 @@ struct BMP180_CAL {
 };
 
 struct BMP180_CAL cal180 = {
-.AC1 = 0, .AC2 = 0,  
-.AC3 = 0, .AC4 = 0,  .AC5 = 0,  .AC6 = 0,  
-.B1 = 0, .B2 = 0,  
-.MB = 0,  .MC = 0,  .MD = 0  
+.AC1 = 408, .AC2 = -72,  
+.AC3 = -14383, .AC4 = 32741,  .AC5 = 32757,  .AC6 = 23153,  
+.B1 = 6190, .B2 = 4,  
+.MB = -32768,  .MC = -8711,  .MD = 2868  
 };
 
 uint readI2C_2UBytes(i2c_inst_t* I2C_ID, uint8_t reg){
@@ -161,38 +161,60 @@ void bmp180_readRawPressure(i2c_inst_t* I2C_ID, int16_t* pressure, int BMP180mod
 }
 
 
-float bmp180_readCompTemp(i2c_inst_t *I2C_ID)
-// returns the compensated temperature in degrees celsius
+int bmp180_readCompTempPressure(i2c_inst_t *I2C_ID, float* temperature, long* pressure, 
+    int BMP180mode, int DebugMode)
+// reads and computes the compensated temperature in degrees celsius,
+// and the compensated pressure in pascals
 {
     int16_t* UT;
 
     // Read raw temp before aligning it with the calibration values
-    bmp180_readRawTemp(I2C_ID, UT);
-    int X1 = ((UT - cal180.AC6) * cal180.AC5) >> 15;
-    int X2 = (cal180.MC << 11) / (X1 + cal180.MD);
-    int B5 = X1 + X2;
-    int temp = ((B5 + 8) >> 4) / 10.0;
-    
-    float floatTemp = (float)temp / 10.0;
+    if (!DebugMode) {
+        bmp180_readRawTemp(I2C_ID, UT); 
+    } else {
+        *UT=27898;
+    };
 
-    return floatTemp;
-
-}
-
-
-float bmp180_readCompPressure(i2c_inst_t *I2C_ID, int BMP180mode)
-// returns the compensated Pressure in Pa
-{
     int16_t* UP;
 
-    // Read raw pressure before aligning it with the calibration values
-    bmp180_readRawPressure(I2C_ID, UP, BMP180mode);
-    //...
-    float floatPressure = 0.0;
+    if (!DebugMode) {
+        bmp180_readRawPressure(I2C_ID, UP, BMP180mode); 
+    } else {
+        *UP=23843;
+    };
 
-    return floatPressure;
+    long X1 = (*UT - cal180.AC6) * (cal180.AC5 >> 15);
+    long X2 = (cal180.MC << 11) / (X1 + cal180.MD);
+    long B5 = X1 + X2;
+    long temp10 = ((B5 + 8) >> 4);
+    
+    *temperature = (float)temp10 / 10.0;
+
+    long B6 = B5-4000;
+    X1 = (cal180.B2 * (B6*(B6>>12)))>>11;
+    X2 = cal180.AC2*(B6>>11);
+    long X3 = X1+X2;   
+    long B3 = (((cal180.AC1*4+X3)<<BMP180mode)+2)/4;
+    X1 = cal180.AC3*(B6>>13);
+    X2 = (cal180.B1*(B6*(B6>>12)))>>16;
+    X3 = ((X1+X2)+2)/4;
+    unsigned long B4 = cal180.AC4 * (unsigned long) ((X3+32768)>>15);
+    unsigned long B7 = ((unsigned long) UP-B3)*(50000>>BMP180mode);
+    if (B7<0x80000000)
+    {
+        *pressure=(B7*2)/B4;
+    } else {
+        *pressure= (B7/B4)*2;
+    } 
+    X1 = (*pressure>>8)*(*pressure>>8);
+    X1 = (X1*3038)>>16;
+    X2 = (-7357*(*pressure))>>16;
+    *pressure = *pressure+(X1+X2+3791)>>4;
+
+    return 0;
 
 }
+
 
 double getAltitude(float Pressure)
 // implements the international barometric formula

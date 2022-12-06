@@ -39,7 +39,8 @@ BMP180_CAL read_BMP180cal(i2c_inst_t* I2C_ID);
 void bmp180_readRawTemp(i2c_inst_t* I2C_ID, int16_t* temp);
 void bmp180_readRawPressure(i2c_inst_t* I2C_ID, int16_t* pressure, 
     int BMP180mode);
-float bmp180_readCompTemp(i2c_inst_t* I2C_ID);
-float bmp180_readCompPressure(i2c_inst_t* I2C_ID, int BMP180mode);
+int bmp180_readCompTempPressure(i2c_inst_t* I2C_ID, float* temperature, long* pressure, 
+    int BMP180mode, int DebugMode);
+//long bmp180_readCompPressure(i2c_inst_t* I2C_ID, int BMP180mode);
 
 double getAltitude(float Pressure);
