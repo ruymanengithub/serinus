@@ -31,8 +31,6 @@ int main() {
     
     i2c_setup(BMP_SDA_PIN, BMP_SCL_PIN);
     
-
-    
     while (1) {
 
         // ...
