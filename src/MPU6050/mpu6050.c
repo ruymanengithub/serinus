@@ -42,10 +42,10 @@ void mpu6050_selftest(i2c_inst_t* I2C_ID, float destination[6])
    i2c_write_blocking(I2C_ID, addrMPU, dst2, 2, true); // Enable self test on all three axes and set gyro range to +/- 250 degrees/s
    sleep_ms(250); // Delay a while to let the device execute the self-test
 
-   rawData[0] = readI2CByte(I2C_ID, addrMPU, SELF_TEST_X); // X-axis self-test results
-   rawData[1] = readI2CByte(I2C_ID, addrMPU, SELF_TEST_Y); // Y-axis self-test results
-   rawData[2] = readI2CByte(I2C_ID, addrMPU, SELF_TEST_Z); // Z-axis self-test results
-   rawData[3] = readI2CByte(I2C_ID, addrMPU, SELF_TEST_A); // Mixed-axis self-test results
+   rawData[0] = readI2C_1Byte(I2C_ID, addrMPU, SELF_TEST_X); // X-axis self-test results
+   rawData[1] = readI2C_1Byte(I2C_ID, addrMPU, SELF_TEST_Y); // Y-axis self-test results
+   rawData[2] = readI2C_1Byte(I2C_ID, addrMPU, SELF_TEST_Z); // Z-axis self-test results
+   rawData[3] = readI2C_1Byte(I2C_ID, addrMPU, SELF_TEST_A); // Mixed-axis self-test results
    // Extract the acceleration test results first
    selfTest[0] = (rawData[0] >> 3) | (rawData[3] & 0x30) >> 4 ; // XA_TEST result is a five-bit unsigned integer
    selfTest[1] = (rawData[1] >> 3) | (rawData[3] & 0x0C) >> 4 ; // YA_TEST result is a five-bit unsigned integer
