@@ -20,6 +20,8 @@ void i2c_setup(int I2C_SDA_PIN, int I2C_SCL_PIN) {
 
     // Make the I2C pins available to picotool
     //bi_decl(bi_2pins_with_func(I2C_SDA_PIN, I2C_SCL_PIN, GPIO_FUNC_I2C));
+    //bi_decl(bi_2pins_with_func(10, 11, GPIO_FUNC_I2C)); // hardwired on tests!
+    //bi_decl(bi_2pins_with_func(2, 3, GPIO_FUNC_I2C)); // hardwired on tests!
 
 }
 

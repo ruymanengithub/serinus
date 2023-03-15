@@ -7,7 +7,7 @@ add_library(bmp180
     bmp180.c)
     
 
-target_link_libraries(bmp180 pico_stdlib hardware_i2c i2c)
+target_link_libraries(bmp180 pico_stdlib hardware_i2c)
 target_link_libraries(bmp180Demo bmp180)
 
 # create map/bin/hex file etc.

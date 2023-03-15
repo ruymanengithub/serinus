@@ -36,7 +36,8 @@ int main() {
     
     i2c_init(I2C_ID, 400 * 1000);
 
-    i2c_setup(MPU_SDA_PIN, MPU_SCL_PIN);
+    //i2c_setup(MPU_SDA_PIN, MPU_SCL_PIN);
+    i2c_setup(10,11);
     mpu6050_reset(I2C_ID);
     
     //run_selftest(I2C_ID);
@@ -62,7 +63,7 @@ int main() {
         printf("(Raw) Gyro. X = %i, Y = %i, Z = %i\n", rgyro[0], rgyro[1], rgyro[2]);
         // Temperature is simple so use the datasheet calculation to get deg C.
         // Note this is chip temperature.
-        printf("Temp. = %i\n", rtemp);
+        printf("Raw Temp. = %i\n", rtemp);
 
         //printf("Gyro. Y = %d\n", gyro[2]);
 
@@ -76,11 +77,9 @@ int main() {
         printf("Temp. = %f\n", temp);
 
 
-        sleep_ms(500);
+        sleep_ms(2000);
 
     }
-    
-
 
 //#endif
     return 0;
