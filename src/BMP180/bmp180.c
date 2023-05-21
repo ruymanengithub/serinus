@@ -12,7 +12,7 @@
 int BMP_SDA_PIN = PICO_DEFAULT_I2C_SDA_PIN;
 int BMP_SCL_PIN = PICO_DEFAULT_I2C_SCL_PIN;
 uint8_t addrBMP = 0x77 ;
-i2c_inst_t *I2C_ID = i2c_default;
+i2c_inst_t *I2C_ID_BMP = i2c_default;
 uint8_t oversampling;
 
 uint8_t __BMP180_CONTROL           = 0xF4; // 244
@@ -63,8 +63,8 @@ BMP180_CAL cal180 = {
 uint8_t BMPreadI2C_1Byte(uint8_t reg)
 {
   uint8_t data;
-  i2c_write_blocking(I2C_ID, addrBMP, &reg, 1, true);
-  i2c_read_blocking(I2C_ID, addrBMP, &data, 1, false);
+  i2c_write_blocking(I2C_ID_BMP, addrBMP, &reg, 1, true);
+  i2c_read_blocking(I2C_ID_BMP, addrBMP, &data, 1, false);
   return data;
 }
 
@@ -73,15 +73,15 @@ void BMPwriteI2C_1Byte(uint8_t a, uint8_t d)
   uint8_t tBuf[2];
   tBuf[0] = a;
   tBuf[1] = d;
-  i2c_write_blocking(I2C_ID, addrBMP, tBuf, 2, false);
+  i2c_write_blocking(I2C_ID_BMP, addrBMP, tBuf, 2, false);
 }
 
 uint16_t BMPreadI2C_2UBytes(uint8_t reg){
     uint8_t buffer[2];
     int16_t data;
     // reads an unsiged integer
-    i2c_write_blocking(I2C_ID, addrBMP, &reg, 1, true);
-    i2c_read_blocking(I2C_ID, addrBMP, buffer, 2, false);
+    i2c_write_blocking(I2C_ID_BMP, addrBMP, &reg, 1, true);
+    i2c_read_blocking(I2C_ID_BMP, addrBMP, buffer, 2, false);
     data = buffer[1] | (buffer[0]<<8);
     //printf("\n2UBytes=%i %i\n", buffer[0], buffer[1]);
     return data;
@@ -91,8 +91,8 @@ int16_t BMPreadI2C_2Bytes(uint8_t reg){
     // reads an integer, 2 bytes-long
     uint8_t buffer[2];
     int16_t data;
-    i2c_write_blocking(I2C_ID, addrBMP, &reg, 1, true);
-    i2c_read_blocking(I2C_ID, addrBMP, buffer, 2, false);
+    i2c_write_blocking(I2C_ID_BMP, addrBMP, &reg, 1, true);
+    i2c_read_blocking(I2C_ID_BMP, addrBMP, buffer, 2, false);
     data = buffer[1] | (buffer[0]<<8);
     //printf("\n2UBytes=%i %i\n",buffer[0],buffer[1]);
     return data;
@@ -136,7 +136,7 @@ void printBMP180cal(BMP180_CAL cal) {
 // pin select function
 void bmp180_setI2C(i2c_inst_t *i, uint16_t sda, uint16_t scl)
 {
-  I2C_ID = i;
+  I2C_ID_BMP = i;
   BMP_SDA_PIN = sda;
   BMP_SCL_PIN = scl;
 }
@@ -144,7 +144,7 @@ void bmp180_setI2C(i2c_inst_t *i, uint16_t sda, uint16_t scl)
 uint8_t bmp180_init(uint8_t mode)
 {
 
-    i2c_init(I2C_ID, 800 * 1000);
+    i2c_init(I2C_ID_BMP, 800 * 1000);
     gpio_set_function(BMP_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(BMP_SCL_PIN, GPIO_FUNC_I2C);
     gpio_pull_up(BMP_SDA_PIN);
@@ -164,8 +164,8 @@ uint8_t bmp180_testcomm(void)
 {
     uint8_t reg = 0xD0;
     uint8_t ID = 0;
-    i2c_write_blocking(I2C_ID, addrBMP, &reg, 1, true); // true to keep master control of bus
-    i2c_read_blocking(I2C_ID, addrBMP, &ID, 1, false);
+    i2c_write_blocking(I2C_ID_BMP, addrBMP, &reg, 1, true); // true to keep master control of bus
+    i2c_read_blocking(I2C_ID_BMP, addrBMP, &ID, 1, false);
     return ID;
 }
 
