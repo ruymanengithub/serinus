@@ -35,7 +35,7 @@ int main(){
     i2c_inst_t* I2C_ID = i2c1;
 
     bmp180_setI2C(I2C_ID, 2, 3);
-    bmp180_init(mode);
+    bmp180_init(mode, 800*1000, true);
 
     printf("\nHello, BMP180!\n");
 
