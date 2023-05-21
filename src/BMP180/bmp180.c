@@ -73,26 +73,28 @@ void BMPwriteI2C_1Byte(uint8_t a, uint8_t d)
   uint8_t tBuf[2];
   tBuf[0] = a;
   tBuf[1] = d;
-  i2c_write_blocking(I2C_ID, a, tBuf, 2, false);
+  i2c_write_blocking(I2C_ID, addrBMP, tBuf, 2, false);
 }
 
-uint BMPreadI2C_2UBytes(uint8_t reg){
-    uint16_t data;
+uint16_t BMPreadI2C_2UBytes(uint8_t reg){
+    uint8_t buffer[2];
+    int16_t data;
     // reads an unsiged integer
     i2c_write_blocking(I2C_ID, addrBMP, &reg, 1, true);
-    uint8_t buffer[2];
     i2c_read_blocking(I2C_ID, addrBMP, buffer, 2, false);
-    data = (uint16_t) buffer[0]<<8 | buffer[1];
+    data = buffer[1] | (buffer[0]<<8);
+    //printf("\n2UBytes=%i %i\n", buffer[0], buffer[1]);
     return data;
 }
 
-int BMPreadI2C_2Bytes(uint8_t reg){
+int16_t BMPreadI2C_2Bytes(uint8_t reg){
     // reads an integer, 2 bytes-long
+    uint8_t buffer[2];
     int16_t data;
     i2c_write_blocking(I2C_ID, addrBMP, &reg, 1, true);
-    uint8_t buffer[2];
     i2c_read_blocking(I2C_ID, addrBMP, buffer, 2, false);
-    data = (int16_t) buffer[0]<<8 | buffer[1];
+    data = buffer[1] | (buffer[0]<<8);
+    //printf("\n2UBytes=%i %i\n",buffer[0],buffer[1]);
     return data;
 }
 
@@ -100,7 +102,7 @@ int BMPreadI2C_2Bytes(uint8_t reg){
 BMP180_CAL read_BMP180cal(void)
 {
     BMP180_CAL cal;
-    cal.AC1 = (int16_t) BMPreadI2C_2Bytes(calregs.AC1);
+    cal.AC1 = BMPreadI2C_2Bytes(calregs.AC1);
     cal.AC2 = BMPreadI2C_2Bytes(calregs.AC2);
     cal.AC3 = BMPreadI2C_2Bytes(calregs.AC3);
     
@@ -168,43 +170,23 @@ uint8_t bmp180_testcomm(void)
 }
 
 
-/*
-int32_t bmp180_readRawTemp(void)
-// Reads the raw (uncompensated) temperature from the sensor.
+int32_t computeB5(int32_t UT, BMP180_CAL cal180)
 {
-    int32_t temp;
-    uint8_t reg;
-    uint8_t regAndCmd[] = {__BMP180_CONTROL, __BMP180_READTEMPCMD};
-    uint8_t tbytes_u8[2] = {0};
-    //uint8_t sacrifice = 0;
-
-    reg = __BMP180_TEMPDATA;
-
-    //i2c_write_blocking(I2C_ID, addrBMP, &reg, 1, true); // true to keep master control of bus
-    //i2c_read_blocking(I2C_ID, addrBMP, &sacrifice, 1, false);
-
-    i2c_write_blocking(I2C_ID, addrBMP, regAndCmd, 2, true); // true to keep master control of bus
-    sleep_ms(5); // wait 5 ms
-    
-    i2c_write_blocking(I2C_ID, addrBMP, &reg, 1, true); // true to keep master control of bus
-    i2c_read_blocking(I2C_ID, addrBMP, tbytes_u8, 2, false);
-    //*temp = (int32_t)27898; // TEST
-    printf("Reading Raw Temperature MSB LSB: %i %i\n", tbytes_u8[0],tbytes_u8[1]);
-    temp = (int32_t) (((int32_t)tbytes_u8[0]<<8) | ((int32_t)tbytes_u8[1]));
-    return temp;
-
+  int32_t X1 = (UT - (int32_t)cal180.AC6) * ((int32_t)cal180.AC5) >> 15;
+  int32_t X2 = ((int32_t)cal180.MC << 11) / (X1 + (int32_t)cal180.MD);
+  return X1 + X2;
+  
 }
-*/
 
-int32_t bmp180_readRawTemp(void)
+uint16_t bmp180_readRawTemp(void)
 // Reads the raw (uncompensated) temperature from the sensor.
 {
     BMPwriteI2C_1Byte(__BMP180_CONTROL, __BMP180_READTEMPCMD);
     sleep_ms(5);
-    return BMPreadI2C_2Bytes(__BMP180_TEMPDATA);
+    uint16_t raw = BMPreadI2C_2UBytes(__BMP180_TEMPDATA);
+    //printf("\nUT=%i\n", raw);
+    return raw;
 }
-
-
 
 int32_t bmp180_readRawPressure(void)
 // Reads the raw (uncompensated) pressure level from the sensor
@@ -233,12 +215,15 @@ int32_t bmp180_readRawPressure(void)
     
     for (int i =0; i<3; i++) pbytes[i] = BMPreadI2C_1Byte(__BMP180_PRESSUREDATA+i);    
 
-    printf("Reading Raw Pressure MSB LSB XLSB: %i %i %i\n", 
-        pbytes[0],pbytes[1], pbytes[2]);
+    //printf("Reading Raw Pressure MSB LSB XLSB: %i %i %i\n", 
+    //    pbytes[0],pbytes[1], pbytes[2]);
 
     pressure = (int32_t)((pbytes[0] << 16) | (pbytes[1] << 8) | 
         pbytes[2]) >> (8 - oversampling);
     //pressure = 23843; // TEST
+
+    //printf("\nUP=%i\n", pressure);
+
     return pressure;
 }
 
@@ -247,25 +232,21 @@ float bmp180_readCompTemp(BMP180_CAL cal180, int DebugMode)
 {
     
     //printf("\n\nReading Comp. Temp\n"); 
-    int32_t UT;
-    int X1, X2, B5, temp10;
+    int32_t UT, B5; 
     float temperature;
 
     // Read raw temp before aligning it with the calibration values
     if (!DebugMode) {
         UT = bmp180_readRawTemp();
-        printf("\n\nRaw temp: %i\n", UT); 
+        //printf("\n\nRaw temp: %i\n", UT); 
     } else {
         UT=27898;
     };
 
 
-    X1 = ((UT - cal180.AC6) * cal180.AC5) >> 15;
-    X2 = (cal180.MC << 11) / (X1 + cal180.MD);
-    B5 = X1 + X2;
-    temp10 = ((B5 + 8) >> 4);
-
-    temperature = (float)temp10 / 10.0;
+    B5 = computeB5(UT, cal180);
+    temperature = (B5 + 8) >> 4;
+    temperature /= 10;
 
     return temperature;
 
@@ -275,52 +256,48 @@ long bmp180_readCompPressure(BMP180_CAL cal180, int DebugMode)
 // reads and computes the compensated pressure in pascals
 {
     //printf("\n\nReading Comp. Pressure\n"); 
-    int32_t UT, UP, X1, X2, X3, B3, B5, B6, B7;
-    uint32_t B4;
+    int32_t UT, UP, X1, X2, X3, B3, B5, B6;
+    uint32_t B4, B7;
     long pressure;
-    
 
     if (!DebugMode) {
         UT = bmp180_readRawTemp(); 
         UP = bmp180_readRawPressure(); 
-        printf("\nRaw temp: %i\n", UT); 
-        printf("Raw Pressure: %i\n", UP); 
+        //printf("\nRaw temp: %i\n", UT); 
+        //printf("Raw Pressure: %i\n", UP); 
     } else {
         UT=27898;
         UP=23843;
     };
 
 
-    X1 = ((UT - cal180.AC6) * cal180.AC5) >> 15;
-    X2 = (cal180.MC << 11) / (X1 + cal180.MD);
-    B5 = X1 + X2;
+    B5 = computeB5(UT, cal180);
 
     B6 = B5-4000;
-    X1 = (cal180.B2 * ((B6*B6)>>12))>>11;
-    X2 = (cal180.AC2*B6)>>11;
+    X1 = ((int32_t)cal180.B2 * ((B6*B6)>>12))>>11;
+    X2 = ((int32_t)cal180.AC2*B6)>>11;
     X3 = X1+X2;
-    B3 = (((cal180.AC1*4+X3)<<oversampling)+2)/4;
-    X1 = (cal180.AC3*B6)>>13;
-    X2 = (cal180.B1*((B6*B6)>>12))>>16;
+    B3 = ((((int32_t)cal180.AC1*4+X3)<<oversampling)+2)/4;
+    
+    X1 = ((int32_t)cal180.AC3*B6)>>13;
+    X2 = ((int32_t)cal180.B1*((B6*B6)>>12))>>16;
     X3 = ((X1+X2)+2)>>2;
 
-    B4 = cal180.AC4 * (unsigned long) ((X3+32768)>>15);
-    B7 = (unsigned long) (UP-B3)*(50000>>oversampling);
-    //printf("B6, X1, X2, X3, B3, B4, B7 = %ld, %ld, %ld, %ld, %ld, %lu, %lu\n",
-    //    B6,X1,X2,X3,B3,B4,B7);
+    B4 = ((uint32_t)cal180.AC4 * (uint32_t) (X3+32768))>>15;
+    B7 = ((uint32_t) UP-B3)*(uint32_t)(50000UL >>oversampling);
+    
     if (B7<0x80000000)
     {
         pressure=(B7*2)/B4;
     } else {
         pressure= (B7/B4)*2;
     } 
-    //printf("pressure = %ld\n",*pressure);
+    
     X1 = (pressure>>8)*(pressure>>8);
     X1 = (X1*3038)>>16;
-    X2 = (-7357*(pressure))>>16;
-    pressure = pressure+(X1+X2+3791)>>4;
-    //printf("B7, X1, X2, pressure = %lu, %ld, %ld, %ld\n",
-    //    B7,X1,X2,*pressure);
+    X2 = (-7357*pressure)>>16;
+    pressure = pressure+((X1+X2+(int32_t)3791)>>4);
+    
 
     return pressure;
 

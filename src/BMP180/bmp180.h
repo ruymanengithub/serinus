@@ -26,9 +26,9 @@ enum BMP180_modes{
 
 
 typedef struct BMP180_CAL {
-int32_t AC1, AC2, AC3; 
-uint32_t AC4, AC5, AC6; // = 0xB0;  // R   Calibration data (16 bits)
-int32_t B1, B2, MB, MC, MD;  // = 0xB6;  // R   Calibration data (16 bits)
+int16_t AC1, AC2, AC3; 
+uint16_t AC4, AC5, AC6; // = 0xB0;  // R   Calibration data (16 bits)
+int16_t B1, B2, MB, MC, MD;  // = 0xB6;  // R   Calibration data (16 bits)
 }BMP180_CAL;
 
 BMP180_CAL read_BMP180cal(void);
@@ -39,7 +39,7 @@ uint8_t bmp180_init(uint8_t mode);
 void printBMP180cal(BMP180_CAL cal);
 uint8_t bmp180_testcomm(void);
 
-int32_t bmp180_readRawTemp(void);
+uint16_t bmp180_readRawTemp(void);
 float bmp180_readCompTemp(BMP180_CAL cal180, int DebugMode);
 
 int32_t bmp180_readRawPressure(void);
