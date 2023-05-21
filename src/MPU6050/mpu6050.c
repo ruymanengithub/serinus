@@ -86,14 +86,16 @@ void mpu6050_selftest(i2c_inst_t* I2C_ID_MPU, float destination[6])
    
 }
 
-uint8_t mpu6050_init(void) {
+uint8_t mpu6050_init(int bauds, bool initi2c) {
 
-    i2c_init(I2C_ID_MPU, 400 * 1000);
-    gpio_set_function(MPU_SDA_PIN, GPIO_FUNC_I2C);
-    gpio_set_function(MPU_SCL_PIN, GPIO_FUNC_I2C);
-    gpio_pull_up(MPU_SDA_PIN);
-    gpio_pull_up(MPU_SCL_PIN);
-
+    if  (initi2c) {
+        i2c_init(I2C_ID_MPU, bauds);
+        gpio_set_function(MPU_SDA_PIN, GPIO_FUNC_I2C);
+        gpio_set_function(MPU_SCL_PIN, GPIO_FUNC_I2C);
+        gpio_pull_up(MPU_SDA_PIN);
+        gpio_pull_up(MPU_SCL_PIN);
+    }
+    
     // Two byte reset. First byte register, second byte data
     // There are a load more options to set up the device in different ways that could be added here
     uint8_t buf[] = {0x6B, 0x00}; // 107, 0

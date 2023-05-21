@@ -19,7 +19,7 @@ extern uint8_t addrMPU;  // 104
 
 
 void mpu6050_setI2C(i2c_inst_t* I2C_ID, uint8_t sda, uint8_t scl);
-uint8_t mpu6050_init();
+uint8_t mpu6050_init(int bauds, bool initi2c);
 
 void mpu6050_selftest(i2c_inst_t* I2C_ID, float destination[6]);
 
