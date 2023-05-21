@@ -34,7 +34,7 @@ int main() {
     printf("\nHello, MPU6050! Reading raw data from Registers...\n");
 
     mpu6050_setI2C(I2C_ID, 10, 11);
-    mpu6050_init();
+    mpu6050_init(400*1000, true);
     
     run_selftest(I2C_ID);
 
