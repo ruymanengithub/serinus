@@ -34,7 +34,7 @@ int16_t B1, B2, MB, MC, MD;  // = 0xB6;  // R   Calibration data (16 bits)
 BMP180_CAL read_BMP180cal(void);
 
 void bmp180_setI2C(i2c_inst_t* I2C_ID, uint16_t sda, uint16_t scl);
-uint8_t bmp180_init(uint8_t mode);
+uint8_t bmp180_init(uint8_t mode, int bauds, bool initi2c);
 
 void printBMP180cal(BMP180_CAL cal);
 uint8_t bmp180_testcomm(void);

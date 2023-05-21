@@ -141,14 +141,17 @@ void bmp180_setI2C(i2c_inst_t *i, uint16_t sda, uint16_t scl)
   BMP_SCL_PIN = scl;
 }
 
-uint8_t bmp180_init(uint8_t mode)
+uint8_t bmp180_init(uint8_t mode, int bauds, bool initi2c)
 {
 
-    i2c_init(I2C_ID_BMP, 800 * 1000);
-    gpio_set_function(BMP_SDA_PIN, GPIO_FUNC_I2C);
-    gpio_set_function(BMP_SCL_PIN, GPIO_FUNC_I2C);
-    gpio_pull_up(BMP_SDA_PIN);
-    gpio_pull_up(BMP_SCL_PIN);
+    if (initi2c)
+    {
+        i2c_init(I2C_ID_BMP, bauds); // 800 * 1000        
+        gpio_set_function(BMP_SDA_PIN, GPIO_FUNC_I2C);
+        gpio_set_function(BMP_SCL_PIN, GPIO_FUNC_I2C);
+        gpio_pull_up(BMP_SDA_PIN);
+        gpio_pull_up(BMP_SCL_PIN);
+    }
 
     if (mode > __BMP180_ULTRAHIGHRES)
         mode = __BMP180_ULTRAHIGHRES;
