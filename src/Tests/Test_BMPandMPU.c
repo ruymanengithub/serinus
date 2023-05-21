@@ -3,7 +3,7 @@
  * Testing both I2C modules at a time, BMP180 and MPU6050.
  * 
  * R. Azzollini
- * November 2022
+ * May 2023
  * 
  */
 
@@ -12,35 +12,46 @@
 #include "pico/stdlib.h"
 #include "../BMP180/bmp180.h"
 #include "../MPU6050/mpu6050.h"
-#include "../i2c/i2c.h"
 
 int main(void){
 
-    i2c_inst_t* I2C_ID = i2c1;
+    int DebugMode = 0;
+    stdio_init_all();
 
-    i2c_setup(MPU_SDA_PIN, MPU_SCL_PIN);
-    mpu6050_reset(I2C_ID);
+    i2c_inst_t* I2C_ID_BMP = i2c1;
+    i2c_inst_t* I2C_ID_MPU = i2c0;
 
-    i2c_setup(BMP_SDA_PIN, BMP_SCL_PIN);
+    // BMP180
 
-    int16_t raccel[3], rgyro[3], rtempMPU;
+    uint8_t BMPmode = __BMP180_STANDARD;
 
-    float accel[3], gyro[3], gyrobuffer, tempMPU;
-    float mgyro[3];
-    for (int i = 0; i < 3; i++) {
-            mgyro[i] = 0.0;
-    }
+    bmp180_setI2C(I2C_ID_BMP, 2, 3);
+    bmp180_init(BMPmode);
 
-    int16_t rtempBMP, rpressure;
-    float pressure, tempBMP;
+    BMP180_CAL cal180 = read_BMP180cal();
 
+    float BMPtemp;
+    int32_t BMPpressure;
 
-    while (1) {
+    // MPU6050
 
-        // MPU6050
+    mpu6050_setI2C(I2C_ID_MPU, 12, 13);
+    mpu6050_init();
 
-        mpu6050_read_raw(I2C_ID, raccel, rgyro, &rtempMPU);
-        mpu6050_read_cal(I2C_ID, accel, gyro, &tempMPU);
+    int16_t raccel[3], rgyro[3], MPUrtemp;
+    float accel[3], gyro[3], MPUtemp;
+
+    while(1){
+    
+        BMPtemp = bmp180_readCompTemp(cal180, DebugMode);
+        printf("BMP-Temperature: %.2f C\n", BMPtemp);
+
+        BMPpressure = bmp180_readCompPressure(cal180, DebugMode);
+        printf("BMP-Pressure: %i Pa\n", BMPpressure);
+
+        mpu6050_read_raw(I2C_ID_MPU, raccel, rgyro, &MPUrtemp);
+
+        mpu6050_read_cal(I2C_ID_MPU, accel, gyro, &MPUtemp);
 
         // These are the raw numbers from the chip, so will need tweaking to be really useful.
         // See the datasheet for more information
@@ -48,25 +59,13 @@ int main(void){
         printf("(Raw) Gyro. X = %i, Y = %i, Z = %i\n", rgyro[0], rgyro[1], rgyro[2]);
         // Temperature is simple so use the datasheet calculation to get deg C.
         // Note this is chip temperature.
-        printf("Temp. = %i\n", rtempMPU);
-
-        //printf("Gyro. Y = %d\n", gyro[2]);
-
-        for (int i = 0; i < 3; i++) {
-            gyrobuffer = (fabs(gyro[i])>fabs(mgyro[i])) ? gyro[i] : mgyro[i];
-            mgyro[i] = gyrobuffer;
-        }
+        printf("Raw Temp. = %i\n", MPUrtemp);
 
         printf("Acc. X = %f, Y = %f, Z = %f\n", accel[0], accel[1], accel[2]);
-        printf("AbsMax(Gyro.) X = %f, Y = %f, Z = %f\n", mgyro[0], mgyro[1], mgyro[2]);
-        printf("Temp. = %f\n", tempMPU);
+        printf("Gyro. X = %f, Y = %f, Z = %f\n", gyro[0], gyro[1], gyro[2]);
+        printf("Temp. = %f\n", MPUtemp);
 
-        // BMP180
-
-        bmp180_read_raw(I2C_ID, &rpressure, &rtempBMP);
-        bmp180_read_cal(I2C_ID, &pressure, &tempBMP);
-
-        sleep_ms(500);
+        sleep_ms(2000);
 
     }
 
