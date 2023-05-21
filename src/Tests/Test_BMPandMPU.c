@@ -17,16 +17,17 @@ int main(void){
 
     int DebugMode = 0;
     stdio_init_all();
+    int bauds = 800 * 1000;
 
     i2c_inst_t* I2C_ID_BMP = i2c1;
-    i2c_inst_t* I2C_ID_MPU = i2c0;
+    i2c_inst_t* I2C_ID_MPU = i2c1;
 
     // BMP180
 
     uint8_t BMPmode = __BMP180_STANDARD;
 
     bmp180_setI2C(I2C_ID_BMP, 2, 3);
-    bmp180_init(BMPmode);
+    bmp180_init(BMPmode, bauds, true);
 
     BMP180_CAL cal180 = read_BMP180cal();
 
@@ -35,8 +36,8 @@ int main(void){
 
     // MPU6050
 
-    mpu6050_setI2C(I2C_ID_MPU, 12, 13);
-    mpu6050_init();
+    mpu6050_setI2C(I2C_ID_MPU, 2, 3);
+    mpu6050_init(bauds, false);
 
     int16_t raccel[3], rgyro[3], MPUrtemp;
     float accel[3], gyro[3], MPUtemp;
