@@ -22,7 +22,6 @@ void run_selftest(i2c_inst_t* I2C_ID) {
     printf("y-axis self test: gyration trim within : %f %% of factory value\n", SelfTest[4]);
     printf("z-axis self test: gyration trim within : %f %% of factory value\n", SelfTest[5]);
 
-
 }
 
 
@@ -33,29 +32,22 @@ int main() {
     i2c_inst_t* I2C_ID = i2c1;
     
     printf("\nHello, MPU6050! Reading raw data from Registers...\n");
-    
-    i2c_init(I2C_ID, 400 * 1000);
 
-    //i2c_setup(MPU_SDA_PIN, MPU_SCL_PIN);
-    i2c_setup(10,11);
-    mpu6050_reset(I2C_ID);
+    mpu6050_setI2C(I2C_ID, 10, 11);
+    mpu6050_init();
     
-    //run_selftest(I2C_ID);
+    run_selftest(I2C_ID);
 
     int16_t raccel[3], rgyro[3], rtemp;
+    float accel[3], gyro[3], temp;
 
-    float accel[3], gyro[3], gyrobuffer, temp;
-    float mgyro[3];
-    for (int i = 0; i < 3; i++) {
-            mgyro[i] = 0.0;
-    }
+    
     
     while (1) {
 
         mpu6050_read_raw(I2C_ID, raccel, rgyro, &rtemp);
 
         mpu6050_read_cal(I2C_ID, accel, gyro, &temp);
-
 
         // These are the raw numbers from the chip, so will need tweaking to be really useful.
         // See the datasheet for more information
@@ -65,15 +57,8 @@ int main() {
         // Note this is chip temperature.
         printf("Raw Temp. = %i\n", rtemp);
 
-        //printf("Gyro. Y = %d\n", gyro[2]);
-
-        for (int i = 0; i < 3; i++) {
-            gyrobuffer = (fabs(gyro[i])>fabs(mgyro[i])) ? gyro[i] : mgyro[i];
-            mgyro[i] = gyrobuffer;
-        }
-
         printf("Acc. X = %f, Y = %f, Z = %f\n", accel[0], accel[1], accel[2]);
-        printf("AbsMax(Gyro.) X = %f, Y = %f, Z = %f\n", mgyro[0], mgyro[1], mgyro[2]);
+        printf("Gyro. X = %f, Y = %f, Z = %f\n", gyro[0], gyro[1], gyro[2]);
         printf("Temp. = %f\n", temp);
 
 
@@ -81,7 +66,7 @@ int main() {
 
     }
 
-//#endif
+
     return 0;
 }
 

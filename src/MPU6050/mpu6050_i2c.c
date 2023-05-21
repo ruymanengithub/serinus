@@ -22,6 +22,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+/*
+
 #include <stdio.h>
 #include <string.h>
 #include "pico/stdlib.h"
@@ -121,3 +123,5 @@ int main() {
 #endif
     return 0;
 }
+
+*/
