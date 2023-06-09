@@ -95,6 +95,7 @@ uint8_t mpu6050_init(int bauds, bool initi2c) {
         gpio_pull_up(MPU_SDA_PIN);
         gpio_pull_up(MPU_SCL_PIN);
     }
+
     
     // Two byte reset. First byte register, second byte data
     // There are a load more options to set up the device in different ways that could be added here
