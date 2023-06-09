@@ -17,7 +17,8 @@ int main(void){
 
     int DebugMode = 0;
     stdio_init_all();
-    int bauds = 800 * 1000;
+    int bauds = 400 * 1000;
+    bool doMPU = true;
 
     i2c_inst_t* I2C_ID_BMP = i2c1;
     i2c_inst_t* I2C_ID_MPU = i2c1;
@@ -36,35 +37,41 @@ int main(void){
 
     // MPU6050
 
-    mpu6050_setI2C(I2C_ID_MPU, 2, 3);
-    mpu6050_init(bauds, false);
-
+    if (doMPU) {
+        mpu6050_setI2C(I2C_ID_MPU, 2, 3);
+        mpu6050_init(bauds, false);
+    }
     int16_t raccel[3], rgyro[3], MPUrtemp;
     float accel[3], gyro[3], MPUtemp;
+    
 
     while(1){
-    
+        
+        printf("\n\n");
         BMPtemp = bmp180_readCompTemp(cal180, DebugMode);
         printf("BMP-Temperature: %.2f C\n", BMPtemp);
 
         BMPpressure = bmp180_readCompPressure(cal180, DebugMode);
         printf("BMP-Pressure: %i Pa\n", BMPpressure);
 
-        mpu6050_read_raw(I2C_ID_MPU, raccel, rgyro, &MPUrtemp);
+        if (doMPU) {
 
-        mpu6050_read_cal(I2C_ID_MPU, accel, gyro, &MPUtemp);
+            mpu6050_read_raw(I2C_ID_MPU, raccel, rgyro, &MPUrtemp);
 
-        // These are the raw numbers from the chip, so will need tweaking to be really useful.
-        // See the datasheet for more information
-        printf("(Raw) Acc. X = %i, Y = %i, Z = %i\n", raccel[0], raccel[1], raccel[2]);
-        printf("(Raw) Gyro. X = %i, Y = %i, Z = %i\n", rgyro[0], rgyro[1], rgyro[2]);
-        // Temperature is simple so use the datasheet calculation to get deg C.
-        // Note this is chip temperature.
-        printf("Raw Temp. = %i\n", MPUrtemp);
+            mpu6050_read_cal(I2C_ID_MPU, accel, gyro, &MPUtemp);
 
-        printf("Acc. X = %f, Y = %f, Z = %f\n", accel[0], accel[1], accel[2]);
-        printf("Gyro. X = %f, Y = %f, Z = %f\n", gyro[0], gyro[1], gyro[2]);
-        printf("Temp. = %f\n", MPUtemp);
+            // These are the raw numbers from the chip, so will need tweaking to be really useful.
+            // See the datasheet for more information
+            printf("(Raw) Acc. X = %i, Y = %i, Z = %i\n", raccel[0], raccel[1], raccel[2]);
+            printf("(Raw) Gyro. X = %i, Y = %i, Z = %i\n", rgyro[0], rgyro[1], rgyro[2]);
+            // Temperature is simple so use the datasheet calculation to get deg C.
+            // Note this is chip temperature.
+            printf("Raw Temp. = %i\n", MPUrtemp);
+
+            printf("Acc. X = %f, Y = %f, Z = %f\n", accel[0], accel[1], accel[2]);
+            printf("Gyro. X = %f, Y = %f, Z = %f\n", gyro[0], gyro[1], gyro[2]);
+            printf("Temp. = %f\n", MPUtemp);
+        }
 
         sleep_ms(2000);
 
